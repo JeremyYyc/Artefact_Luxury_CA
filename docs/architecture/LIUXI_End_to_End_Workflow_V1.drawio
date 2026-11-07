@@ -1,0 +1,205 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="liuxi-demo-v1" name="LIUXI Demo V1">
+    <mxGraphModel dx="1500" dy="1030" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1030" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="cloud-band" value="" vertex="1" parent="1" style="rounded=1;arcSize=12;strokeColor=none;connectable=0;fillColor=#F2F6FC;">
+          <mxGeometry x="58" y="105" width="1384" height="128" as="geometry" />
+        </mxCell>
+        <mxCell id="workers-band" value="" vertex="1" parent="1" style="rounded=1;arcSize=12;strokeColor=none;connectable=0;fillColor=#F2F8F6;">
+          <mxGeometry x="315" y="566" width="870" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="LIUXI Demo V1 端到端工作流" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=30;fontColor=#17283E;fontStyle=1;connectable=0;">
+          <mxGeometry x="60" y="26" width="1380" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="React + FastAPI + LangGraph   /   一个 Vercel 公网入口   /   三套提示词并发生成" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=15;fontColor=#455B72;fontStyle=0;connectable=0;">
+          <mxGeometry x="61" y="72" width="1370" height="23" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-label" value="01   Vercel 公网入口" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=15;fontColor=#395E8F;fontStyle=1;connectable=0;">
+          <mxGeometry x="78" y="114" width="380" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="route-label" value="02   选场景与准备资料" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=15;fontColor=#395E8F;fontStyle=1;connectable=0;">
+          <mxGeometry x="83" y="243" width="360" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="parallel-label" value="03   并发生成" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=15;fontColor=#226B65;fontStyle=1;connectable=0;">
+          <mxGeometry x="84" y="550" width="220" height="23" as="geometry" />
+        </mxCell>
+        <mxCell id="parallel-scope" value="V1 默认关闭 Function Calling&lt;br&gt;实时库存查询暂不实现" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=13;fontColor=#455B72;fontStyle=0;connectable=0;">
+          <mxGeometry x="84" y="580" width="217" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="review-label" value="04   汇总与校验" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=15;fontColor=#395E8F;fontStyle=1;connectable=0;">
+          <mxGeometry x="83" y="731" width="270" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="reviewer" value="&lt;b&gt;评审浏览器&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;打开生产链接 · 选择或编辑样例&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EAF1FE;strokeColor=#7898C8;fontColor=#20395C;">
+          <mxGeometry x="88" y="155" width="245" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="web" value="&lt;b&gt;Web 项目 · React + Vite&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;公开生产域名 · 同域 API 转发&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EAF1FE;strokeColor=#7898C8;fontColor=#20395C;">
+          <mxGeometry x="457" y="152" width="310" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="&lt;b&gt;API 项目 · FastAPI&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;校验请求 · 验证代理来源 · 调用 LangGraph&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EAF1FE;strokeColor=#7898C8;fontColor=#20395C;">
+          <mxGeometry x="920" y="152" width="480" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="route" value="&lt;b&gt;场景路由&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;显式场景直达 · 自由输入识别 BG / PR / PC / RE / EV / PO&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EAF1FE;strokeColor=#7898C8;fontColor=#20395C;">
+          <mxGeometry x="525" y="278" width="450" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="evaluation" value="&lt;b&gt;离线评测 · 50 条用例&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;复用同一 LangGraph 与输入契约&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#F1F5F9;strokeColor=#A4B5C8;fontColor=#283D52;">
+          <mxGeometry x="83" y="271" width="340" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="data" value="&lt;b&gt;只读资料 · JSON 与规则&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;客户档案、商品及护理条目、活动、演示预设&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#F1F5F9;strokeColor=#A4B5C8;fontColor=#283D52;">
+          <mxGeometry x="83" y="374" width="340" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="prepare" value="&lt;b&gt;准备共享事实与三套策略提示词&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;复用输入，按 ID 补齐必要资料 · 六个场景各三套策略&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EAF1FE;strokeColor=#7898C8;fontColor=#20395C;">
+          <mxGeometry x="514" y="367" width="472" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="clarify" value="&lt;b&gt;请评审确认或补充&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;保留输入，返回待确认场景或缺失字段&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#FFF5E3;strokeColor=#C79C57;fontColor=#604821;">
+          <mxGeometry x="1092" y="375" width="308" height="63" as="geometry" />
+        </mxCell>
+        <mxCell id="dispatch" value="&lt;b&gt;父图按条件边分发&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;首次启动三路 · 重跑只分发失败项&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#E8F7F3;strokeColor=#69AA9E;fontColor=#1B504B;">
+          <mxGeometry x="596" y="482" width="308" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="worker-1" value="&lt;b&gt;子工作流 1 · Output 1&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;策略提示词 1 · LLM.invoke()&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#E8F7F3;strokeColor=#69AA9E;fontColor=#1B504B;">
+          <mxGeometry x="342" y="603" width="250" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="worker-2" value="&lt;b&gt;子工作流 2 · Output 2&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;策略提示词 2 · LLM.invoke()&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#E8F7F3;strokeColor=#69AA9E;fontColor=#1B504B;">
+          <mxGeometry x="625" y="603" width="250" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="worker-3" value="&lt;b&gt;子工作流 3 · Output 3&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;策略提示词 3 · LLM.invoke()&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#E8F7F3;strokeColor=#69AA9E;fontColor=#1B504B;">
+          <mxGeometry x="908" y="603" width="250" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="validate" value="&lt;b&gt;汇总并校验 Output 1–3&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;规则核对格式与事实 · 整组审阅承诺与策略差异&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EAF1FE;strokeColor=#7898C8;fontColor=#20395C;">
+          <mxGeometry x="508" y="734" width="484" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="repair" value="&lt;b&gt;定向重跑失败项&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;保留合格项 · 传入失败原因 · 最多一轮&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#FFF5E3;strokeColor=#C79C57;fontColor=#604821;">
+          <mxGeometry x="103" y="890" width="306" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="success" value="&lt;b&gt;返回三条合格话术&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;浏览器显示三张结果卡 · 支持编辑和复制&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#EBF7EE;strokeColor=#76AC86;fontColor=#255537;">
+          <mxGeometry x="550" y="890" width="400" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="failed" value="&lt;b&gt;返回失败或超时状态&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#41566D'&gt;工作台保留输入，提示重试&lt;/span&gt;" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;rounded=1;arcSize=13;spacing=5;fontSize=17;strokeWidth=1.3;fillColor=#F1F5F9;strokeColor=#A4B5C8;fontColor=#283D52;">
+          <mxGeometry x="1090" y="890" width="310" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="footer" value="本地复现   Docker Compose 启动 Web 和 API，前端保持同样的 /api 路径" vertex="1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;text;align=left;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;fontSize=13;fontColor=#455B72;fontStyle=0;connectable=0;">
+          <mxGeometry x="83" y="983" width="1290" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="e-reviewer-web" value="HTTPS" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="reviewer" target="web">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="0" y="-11" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-web-api" value="同域 /api/*" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="web" target="api">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="0" y="-11" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-route" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="api" target="route">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1160" y="247" />
+              <mxPoint x="750" y="247" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-evaluation-route" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" edge="1" parent="1" source="evaluation" target="route">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="474" y="302" />
+              <mxPoint x="474" y="309" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-prepare" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="route" target="prepare">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e-route-clarify" value="意图不明" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#94682E;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" edge="1" parent="1" source="route" target="clarify">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="0" y="-10" />
+            <Array as="points">
+              <mxPoint x="1246" y="309" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-data-prepare" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" edge="1" parent="1" source="data" target="prepare">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e-prepare-clarify" value="资料不足" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#94682E;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" edge="1" parent="1" source="prepare" target="clarify">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="0" y="-11" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-prepare-dispatch" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="prepare" target="dispatch">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e-dispatch-worker-1" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#3F827A;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="dispatch" target="worker-1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="750" y="575" />
+              <mxPoint x="467" y="575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-worker-1-validate" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#3F827A;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="worker-1" target="validate">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="467" y="705" />
+              <mxPoint x="750" y="705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-dispatch-worker-2" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#3F827A;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="dispatch" target="worker-2">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e-worker-2-validate" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#3F827A;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="worker-2" target="validate">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e-dispatch-worker-3" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#3F827A;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="dispatch" target="worker-3">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="750" y="575" />
+              <mxPoint x="1033" y="575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-worker-3-validate" value="" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#3F827A;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="worker-3" target="validate">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1033" y="705" />
+              <mxPoint x="750" y="705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-validate-success" value="三条通过" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#518564;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="validate" target="success">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="48" y="0" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-validate-repair" value="有失败项且仍可重跑" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#94682E;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="validate" target="repair">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="0" y="-11" />
+            <Array as="points">
+              <mxPoint x="256" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-validate-failed" value="超时或重跑后仍失败" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#586E88;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="validate" target="failed">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="0" y="-11" />
+            <Array as="points">
+              <mxPoint x="1245" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-repair-dispatch" value="只重跑失败项" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.5;strokeColor=#94682E;fontSize=13;fontColor=#344C63;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" edge="1" parent="1" source="repair" target="dispatch">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="offset" x="52" y="-11" />
+            <Array as="points">
+              <mxPoint x="62" y="924" />
+              <mxPoint x="62" y="509" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
