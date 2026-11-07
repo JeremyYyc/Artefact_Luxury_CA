@@ -49,12 +49,16 @@ class Resources:
         catalog = json.loads((data / "LIUXI_Product_Catalog.json").read_text(encoding="utf-8"))
         events = json.loads((data / "LIUXI_Event_Catalog.json").read_text(encoding="utf-8"))
         self.clients = {item["client_id"]: item for item in clients["clients"]}
+        self.segment_labels = {key: item["label"] for key, item in clients["segment_definitions"].items()}
+        self.brand = catalog["brand"]
         self.products = {item["product_id"]: item for item in catalog["products"]}
         self.events = {item["event_id"]: item for item in events["events"]}
         self.prompts = json.loads((ROOT / "backend/prompts/liuxi_v1.json").read_text(encoding="utf-8"))
         definitions = TypeAdapter(list[PresetDefinition]).validate_json((data / "presets.json").read_bytes())
         self.presets = []
         for preset in definitions:
+            if preset.input.scenario is None or preset.input.client_id is None:
+                raise ValueError(f"Preset {preset.id} requires an explicit scenario and client")
             client, products, event = self.resolve(preset.input)
             self.presets.append(Preset(
                 **preset.model_dump(),
@@ -67,10 +71,24 @@ class Resources:
                 strategy_labels=[item["label"] for item in self.prompts["scenarios"][preset.input.scenario]],
             ))
 
-    def resolve(self, request: GenerateInput) -> tuple[dict, list[dict], dict | None]:
+    def library(self) -> dict:
+        client_fields = ("client_id", "full_name", "salutation", "segment", "first_contact_date",
+                         "last_contact_date", "recent_purchases", "event_participation")
+        now = datetime.now(SHANGHAI)
+        return {
+            "clients": [{field: client[field] for field in client_fields} for client in self.clients.values()],
+            "segment_labels": self.segment_labels,
+            "products": list(self.products.values()),
+            "events": [{**event, "invite_state": invite_state(event, now)} for event in self.events.values()],
+            "brand": self.brand,
+            "strategies": {scenario: [item["label"] for item in entries]
+                           for scenario, entries in self.prompts["scenarios"].items()},
+        }
+
+    def resolve(self, request: GenerateInput) -> tuple[dict | None, list[dict], dict | None]:
         client = self.clients.get(request.client_id)
         ids = dict.fromkeys(filter(None, [request.product_id, *request.product_ids]))
-        if client is None or any(product_id not in self.products for product_id in ids):
+        if (request.client_id and client is None) or any(product_id not in self.products for product_id in ids):
             raise InvalidInput("客户或商品资料无法找到，请重新载入预设。")
         products = [self.products[product_id] for product_id in ids]
         if request.scenario in ("PR", "PC", "PO") and not products:
@@ -84,17 +102,22 @@ class Resources:
             raise InvalidInput("请先选择要讨论的活动场次。")
         return client, products, event
 
-    def prepare(self, request: GenerateInput, *, now: datetime | None = None) -> dict:
+    def prepare(self, request: GenerateInput, *, scenario: Scenario | None = None, now: datetime | None = None) -> dict:
+        scenario = scenario or request.scenario
+        if scenario is None:
+            raise InvalidInput("请先确认本轮任务的场景。")
         client, products, event = self.resolve(request)
         now = now or datetime.now(SHANGHAI)
         if request.current_message is None and (not request.advisor_goal or request.scenario == "PO"):
             raise InvalidInput("请填写本轮待回复消息或顾问任务。")
         if request.scenario == "BG" and request.outreach is None:
             raise InvalidInput("请填写问候类型。")
+        if scenario == "EV" and not event and request.current_message is None:
+            raise InvalidInput("请先选择要邀约的活动场次。")
 
         selected_products = []
         for product in products:
-            fields = ("product_id", "name", *PRODUCT_FIELDS[request.scenario])
+            fields = ("product_id", "name", *PRODUCT_FIELDS[scenario])
             selected = {field: product[field] for field in fields if field in product}
             if "care_manual" in selected:
                 manual = selected["care_manual"]
@@ -104,7 +127,7 @@ class Resources:
             selected_products[0]["selected_color"] = request.color
 
         selected_events = []
-        if event and request.scenario == "EV":
+        if event and scenario == "EV":
             state = invite_state(event, now)
             rsvp = event.get("rsvp", {})
             if request.current_message is None:
@@ -118,7 +141,13 @@ class Resources:
             selected_events.append(selected)
 
         to_confirm = []
-        if request.scenario == "PO":
+        if scenario in ("PR", "PC", "PO") and not selected_products:
+            to_confirm.append({
+                "topic": "款式资料",
+                "owner": "advisor",
+                "note": "本轮未关联商品目录。款式、规格、报价和护理方法未经核实，请按任务说明需要补什么。",
+            })
+        if scenario == "PO":
             to_confirm.append({
                 "topic": "折扣或报价授权",
                 "owner": "advisor",
@@ -130,12 +159,15 @@ class Resources:
                 "owner": "advisor",
                 "note": "目录只提供线下场次资料。线上安排、直播及回放均未核实。",
             })
+        elif scenario == "EV":
+            to_confirm.append({"topic": "活动场次", "owner": "advisor", "note": "本轮未关联已核实的活动场次。"})
         return {
             "effective_at": now.astimezone(SHANGHAI).isoformat(timespec="seconds"),
             "advisor_goal": request.advisor_goal,
             "current_message": request.current_message.model_dump(mode="json") if request.current_message else None,
             "history": [message.model_dump(mode="json") for message in request.history],
-            "client": {field: client[field] for field in ("client_id", "salutation")},
+            "client": {field: client[field] for field in ("client_id", "salutation")} if client else None,
+            "client_background": request.client_background,
             "outreach": request.outreach.model_dump(mode="json") if request.outreach else None,
             "products": selected_products,
             "events": selected_events,

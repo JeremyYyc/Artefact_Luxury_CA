@@ -28,8 +28,9 @@ class Outreach(InputModel):
 
 
 class GenerateInput(InputModel):
-    scenario: Scenario
-    client_id: CatalogId
+    scenario: Scenario | None = None
+    client_id: CatalogId | None = None
+    client_background: MessageText | None = None
     product_id: CatalogId | None = None
     product_ids: list[CatalogId] = Field(default_factory=list, max_length=3)
     color: str | None = Field(default=None, min_length=1, max_length=30)
@@ -67,8 +68,21 @@ class Reply(BaseModel):
     text: str
 
 
+class RoutingDecision(BaseModel):
+    scenario: Scenario | Literal["needs_clarification"]
+    reason: str
+    question: str | None
+
+
+class RoutingInfo(BaseModel):
+    mode: Literal["selected", "automatic"]
+    reason: str | None = None
+
+
 class GenerateResponse(BaseModel):
     request_id: str
     scenario: Scenario
     workflow_version: str
     options: tuple[Reply, Reply, Reply]
+    routing: RoutingInfo
+    basis: dict

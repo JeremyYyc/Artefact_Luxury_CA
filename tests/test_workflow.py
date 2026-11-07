@@ -3,6 +3,9 @@ import json
 import unittest
 from datetime import datetime
 
+from fastapi.testclient import TestClient
+
+from app import app
 from backend.resources import InvalidInput, Resources, invite_state
 from backend.workflow import ReplyWorkflow, ReviewError, precheck
 
@@ -154,3 +157,89 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         invitation = request.model_copy(update={"current_message": None, "advisor_goal": "邀请顾客参加护理课"})
         with self.assertRaisesRegex(InvalidInput, "不可报名"):
             self.resources.prepare(invitation, now=now)
+
+
+class ApiModel:
+    def __init__(self, decision):
+        self.decision = decision
+        self.calls = []
+
+    async def complete(self, messages, *, max_tokens):
+        payload = json.loads(messages[1]["content"].split("\n", 1)[1])
+        self.calls.append(payload)
+        if "slot" in payload:
+            return json.dumps({"text": f"第 {payload['slot']} 条草稿"})
+        if "options" in payload:
+            return json.dumps({
+                "slot_results": [{"slot": slot, "status": "pass", "issues": []} for slot in (1, 2, 3)],
+                "rerun_slots": [],
+            })
+        return json.dumps(self.decision)
+
+
+class WorkbenchApiTests(unittest.TestCase):
+    def test_free_input_routes_and_returns_prepared_basis(self):
+        model = ApiModel({"scenario": "PR", "reason": "本轮咨询肩背包。", "question": None})
+        with TestClient(app) as client:
+            app.state.model = model
+            response = client.post("/api/generate", json={
+                "current_message": {"text": "想看看适合通勤的肩背包。"},
+                "client_background": "顾客平时带短伞。",
+                "product_ids": ["LIUXI-INTERVAL-28"],
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["cache-control"], "no-store")
+        body = response.json()
+        self.assertEqual(body["scenario"], "PR")
+        self.assertEqual(body["routing"], {"mode": "automatic", "reason": "本轮咨询肩背包。"})
+        self.assertEqual(set(model.calls[0]), {"current_message", "advisor_goal", "history"})
+        self.assertEqual(len(model.calls), 5)
+        self.assertEqual(body["basis"], model.calls[-1]["context"])
+        self.assertEqual(body["basis"]["client_background"], "顾客平时带短伞。")
+        self.assertIsNone(body["basis"]["client"])
+        self.assertEqual(body["basis"]["verified_facts"], [])
+        self.assertEqual(body["basis"]["products"][0]["product_id"], "LIUXI-INTERVAL-28")
+        self.assertNotIn("inventory", body["basis"]["products"][0])
+
+    def test_free_proactive_task_does_not_turn_history_into_current_message(self):
+        model = ApiModel({"scenario": "BG", "reason": "顾问要发送生日问候。", "question": None})
+        with TestClient(app) as client:
+            app.state.model = model
+            response = client.post("/api/generate", json={
+                "advisor_goal": "给顾客发一条生日祝福。",
+                "history": [{"role": "customer", "text": "上次那款包还有货吗？"}],
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(model.calls[0]["current_message"])
+        self.assertEqual(response.json()["basis"]["advisor_goal"], "给顾客发一条生日祝福。")
+        self.assertIsNone(response.json()["basis"]["current_message"])
+
+    def test_ambiguous_or_invalid_route_cannot_start_generation(self):
+        question = "顾客想具体解决什么问题？"
+        decisions = [(422, {"scenario": "needs_clarification", "reason": "指代不清。", "question": question}), (502, None)]
+        for status, decision in decisions:
+            with self.subTest(status=status), TestClient(app) as client:
+                model = ApiModel(decision)
+                app.state.model = model
+                response = client.post("/api/generate", json={"current_message": {"text": "这个怎么弄？"}})
+                self.assertEqual(response.status_code, status)
+                self.assertEqual(response.headers["cache-control"], "no-store")
+                self.assertEqual(len(model.calls), 1)
+                if status == 422:
+                    self.assertEqual(response.json()["detail"], question)
+
+    def test_presets_keep_explicit_routing_and_library_exposes_display_fields(self):
+        with TestClient(app) as client:
+            model = ApiModel(None)
+            app.state.model = model
+            presets = client.get("/api/presets").json()
+            self.assertEqual(len(presets), 6)
+            payload = next(item["input"] for item in presets if item["id"] == "PO-02")
+            response = client.post("/api/generate", json=payload)
+            library = client.get("/api/library").json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["routing"]["mode"], "selected")
+        self.assertEqual(len(model.calls), 4)
+        self.assertNotIn("age", library["clients"][0])
+        self.assertTrue(library["products"][0]["care_manual"]["care_topics"])
+        self.assertIn("invite_state", library["events"][0])

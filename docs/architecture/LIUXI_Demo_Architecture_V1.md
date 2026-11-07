@@ -18,8 +18,9 @@ React 根据 [UI/UX 设计稿](../design/LIUXI_AI_Reply_UI_UX_Design.pdf)实现�
 | --- | --- |
 | `GET /api/health` | 检查 API 和必需的只读资料是否就绪，返回服务版本 |
 | `GET /api/presets` | 返回六个可编辑的演示输入，包含场景、客户背景、历史对话和相关资料 |
+| `GET /api/library` | 返回工作台可选的虚构客户、商品、活动和品牌资料 |
 | `POST /api/generate` | 接收场景或自由描述、客户资料、历史对话与本轮待回复内容，以及可选的商品或活动 ID 和补充资料 |
-| 生成成功 | 返回 `request_id`、`scenario`、`workflow_version` 和有序的三条 `options`，每条包含 `slot`、`strategy` 和 `text` |
+| 生成成功 | 返回 `request_id`、`scenario`、`workflow_version` 和有序的三条 `options`，每条包含 `slot`、`strategy` 和 `text`。`routing` 说明场景来源，`basis` 提供本轮取用的资料 |
 | 生成异常 | 用 `422` 表示输入不合法或需要澄清，`429` 表示限流，`502` 表示生成或最终校验失败，`504` 表示超时。前端保留输入并给出对应提示 |
 
 已选场景直接路由。自由输入才用模型识别六个场景之一。意图不明时请顾问确认。进入场景后，优先复用输入里的事实，仅按已选 ID 补齐必要资料，并选取该场景的三套策略提示词。六个场景共维护 18 套策略。

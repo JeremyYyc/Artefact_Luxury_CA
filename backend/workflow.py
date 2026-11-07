@@ -15,7 +15,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import Send
 
 from backend.deepseek import DeepSeek
-from backend.models import Reply, Scenario, Slot
+from backend.models import GenerateInput, Reply, RoutingDecision, Scenario, Slot
 
 LOGGER = logging.getLogger("uvicorn.error.liuxi")
 SLOTS: tuple[Slot, Slot, Slot] = (1, 2, 3)
@@ -142,7 +142,7 @@ class ReplyWorkflow:
         }
         self.validators = {
             kind: Draft202012Validator(pack[kind]["output_schema"])
-            for kind in ("generation", "review")
+            for kind in ("routing", "generation", "review")
         }
 
         worker = StateGraph(GenerationTask, output_schema=DraftUpdate, context_schema=WorkflowRuntime)
@@ -172,6 +172,17 @@ class ReplyWorkflow:
         except ValueError:
             return None
         return value if self.validators[kind].is_valid(value) else None
+
+    async def identify(self, request: GenerateInput, model: DeepSeek, request_id: str) -> RoutingDecision:
+        start = perf_counter()
+        payload = request.model_dump(mode="json", include={"advisor_goal", "current_message", "history"})
+        messages = self.messages("routing", input_json=as_json(payload))
+        data = self.parse("routing", await model.complete(messages, max_tokens=384))
+        if not data or not data["reason"].strip() or (data["question"] is not None and not data["question"].strip()):
+            raise ReviewError("invalid scene identification response")
+        LOGGER.info("route request_id=%s scenario=%s ms=%d", request_id, data["scenario"],
+                    (perf_counter() - start) * 1000)
+        return RoutingDecision.model_validate(data)
 
     @staticmethod
     def first_batch(state: WorkflowState) -> list[Send]:
