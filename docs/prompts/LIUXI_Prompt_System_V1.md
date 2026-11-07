@@ -44,7 +44,7 @@ $strategy_prompt
 定向重跑
 如果用户消息附有父图校验反馈，只重写本路。修复每条 issues 对应的问题，沿用本路策略。把 passed_replies 用作避开重复切入点或下一步动作的参照。其他路的正文和反馈均不提供新的事实依据，也不进入输出。缺少反馈时按首次生成处理。
 
-只输出一个 JSON 对象，唯一字段为 text，值是一条非空微信正文字符串。输出不含 Markdown、编号、策略名、过程或其他字段。
+只输出一个 JSON 对象，唯一字段为 text，值是一条非空微信正文字符串。输出不含 Markdown、编号、策略名、过程或其他字段。结构示例：{"text":"此处填写本轮话术"}，正文按本轮任务写。
 ```
 
 用户消息
@@ -189,7 +189,7 @@ $feedback_json
 
 ```text
 目标：直接回答折扣、同价、套餐或价格顾虑，给顾客一个已核实的价格基准。
-适用：直接问折扣时复述对应请求并回答能否确认，必要时给目录价。只是嫌贵或还想想时，接受客户的节奏，给本轮所需的已知价或差额。
+适用：直接问折扣时，先用日常话说明目前能否确认优惠，再给已核实的目录价。本路围绕这个价格基准收尾，省略代查动作、预算建议和内部审批用语。只是嫌贵或还想想时，接受客户的节奏，给本轮所需的已知价或差额。
 备用：折扣无本轮有效授权时说目前无法确认该优惠。没有目录价时省掉金额，仅说明价格待核对。勿承诺成交价、保留商品或暗示一定有优惠。
 ```
 
@@ -197,7 +197,7 @@ $feedback_json
 
 ```text
 目标：把价格异议落在一个可以核实的条件或可感知的使用差异上。
-适用：直接要折扣、同价或组合价时，先说当前能否确认，再提出核实准确的政策或同款信息。客户问贵在哪时，用已核实材质、结构或实际用法回答，可给一个具体对比动作。
+适用：直接要折扣、同价或组合价时，先说当前能否确认，再提出核实本款适用的优惠条件或同款信息。客户只问优惠时，核实就是本路的落点，省略目录价、商品卖点、答复时间和结果承诺。客户问贵在哪时，用已核实材质、结构或实际用法回答，可给一个具体对比动作。
 备用：缺对方商品信息时，只邀请发具体款式或链接供识别，不给同价暗示。缺价格或价值证据时，只给待核实的下一步，省掉关于成本、稀缺、竞品品质或升值的推断。
 ```
 
@@ -206,7 +206,7 @@ $feedback_json
 ```text
 目标：让顾客守住预算，按使用频率、现有商品或真实替代判断是否值得买。
 适用：先直接回应本轮价格或优惠问题，再给一个取舍。只推荐价格和关键用途都符合的已核实替代。若顾客已有能满足需要的款，允许建议继续用现有款。
-备用：只有一款或无合适替代时，明确可先不决定。可以按客户自己提出的折扣门槛表达取舍，省掉自行推算的折后报价、虚构平替及催单。
+备用：客户以某个折扣为购买条件且优惠待确认时，先直说目前还不能确认，再说明可以按自己的预算先缓一缓。本路省略目录价、代查动作及内部审批用语。只有一款或无合适替代时，明确可先不决定。省掉自行推算的折后报价、虚构平替及催单。
 ```
 
 ### 场景识别提示词
@@ -256,7 +256,7 @@ $input_json
 6. 若有重复，选能保留最多条且彼此不同的组合。多个组合并列时优先保留更多 locked_slots，再优先保留更贴合策略的组合。仍并列时保留 slot 编号字典序较小的组合。只给未保留项追加 DUPLICATE_STRATEGY，写明至少一个实际冲突的 slot，以及仍符合原策略的替换方向。
 7. slot_results 按 1、2、3 各返回一次。issues 为空则 status 为 pass，否则为 fail。rerun_slots 按升序列出所有 fail 的 slot。每个问题写 code、reason、fix、quote、related_slot。reason 写明哪一处为何失败，fix 写给生成路的具体修正要求。quote 为相关原句片段，没有可引用正文时为 null。related_slot 只在策略重复时写另一个 slot，其余为 null。locked_slots 表示重跑前已保留的回复，仍需逐条复核。最后一轮的 rerun_slots 只供诊断。
 
-只输出 JSON 对象，字段为 slot_results 和 rerun_slots。issues 的 code 从 FORMAT、MISSING_REPLY、UNANSWERED、UNSUPPORTED_FACT、UNVERIFIED_COMMITMENT、UNSAFE_CARE、TONE、STRATEGY_MISMATCH、DUPLICATE_STRATEGY 选取。输出不含 Markdown 或额外字段。
+只输出 JSON 对象，字段为 slot_results 和 rerun_slots。issues 的 code 从 FORMAT、MISSING_REPLY、UNANSWERED、UNSUPPORTED_FACT、UNVERIFIED_COMMITMENT、UNSAFE_CARE、TONE、STRATEGY_MISMATCH、DUPLICATE_STRATEGY 选取。输出不含 Markdown 或额外字段。结构示例（按实际输入判定）：{"slot_results":[{"slot":1,"status":"pass","issues":[]},{"slot":2,"status":"fail","issues":[{"code":"FORMAT","reason":"缺少正文","fix":"返回非空正文","quote":null,"related_slot":null}]},{"slot":3,"status":"pass","issues":[]}],"rerun_slots":[2]}。
 ```
 
 用户消息
@@ -375,7 +375,7 @@ $input_json
 
 ### 拼装与调用
 
-`liuxi_v1.json` 是运行时资源。下面的函数返回 `LLM.invoke()` 所需的两条消息以及本次调用的输出 schema。模板单次替换，JSON 中的客户文本不会再次参与模板解析。开发时可直接用返回的 schema 校验模型原始 JSON，或者用等价的 Pydantic 模型校验。V1 使用普通文本调用和 JSON 解析。
+`liuxi_v1.json` 是运行时资源。下面的函数返回模型调用所需的两条消息以及本次调用的输出 schema。模板单次替换，JSON 中的客户文本不会再次参与模板解析。V1 接入 DeepSeek JSON 输出模式，服务端仍解析原始 JSON 并按提示词包的 schema 校验。
 
 ```python
 import json

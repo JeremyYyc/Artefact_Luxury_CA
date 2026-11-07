@@ -1,0 +1,8 @@
+*
+!app.py
+!requirements.txt
+!backend/
+!backend/**
+!data/
+!data/**
+**/__pycache__

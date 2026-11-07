@@ -1,0 +1,17 @@
+[
+  {
+    "id": "PO-02",
+    "title": "墨黑 Interval 18 · 九折请求",
+    "input": {
+      "scenario": "PO",
+      "client_id": "LIUXI-CL-001",
+      "product_id": "LIUXI-INTERVAL-18",
+      "color": "墨黑",
+      "history": [
+        {"role": "customer", "text": "18 我喜欢墨黑的，刚才手提觉得挺好。", "at": "2026-11-04"},
+        {"role": "advisor", "text": "这款可以手提也可以装肩带。目录价是 14,800 元。", "at": "2026-11-04"}
+      ],
+      "current_message": {"text": "能打个九折吗？可以我就买。", "at": "2026-11-06"}
+    }
+  }
+]
