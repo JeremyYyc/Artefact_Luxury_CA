@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 MessageText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 Slot = Literal[1, 2, 3]
+Scenario = Literal["BG", "PR", "PC", "RE", "EV", "PO"]
+CatalogId = Annotated[str, StringConstraints(min_length=1, max_length=80)]
 
 
 class InputModel(BaseModel):
@@ -20,13 +22,22 @@ class HistoryMessage(Message):
     role: Literal["customer", "advisor"]
 
 
+class Outreach(InputModel):
+    occasion: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+    send_on: date | None = None
+
+
 class GenerateInput(InputModel):
-    scenario: Literal["PO"]
-    client_id: str = Field(min_length=1, max_length=80)
-    product_id: str = Field(min_length=1, max_length=80)
-    color: str = Field(min_length=1, max_length=30)
+    scenario: Scenario
+    client_id: CatalogId
+    product_id: CatalogId | None = None
+    product_ids: list[CatalogId] = Field(default_factory=list, max_length=3)
+    color: str | None = Field(default=None, min_length=1, max_length=30)
+    event_id: CatalogId | None = None
+    advisor_goal: MessageText | None = None
+    outreach: Outreach | None = None
     history: list[HistoryMessage] = Field(default_factory=list, max_length=12)
-    current_message: Message
+    current_message: Message | None = None
 
 
 class PresetDefinition(InputModel):
@@ -43,8 +54,10 @@ class Price(BaseModel):
 class Preset(PresetDefinition):
     client_name: str
     salutation: str
-    product_name: str
-    price: Price
+    product_name: str | None = None
+    product_names: list[str]
+    price: Price | None = None
+    event_name: str | None = None
     strategy_labels: list[str]
 
 
@@ -56,6 +69,6 @@ class Reply(BaseModel):
 
 class GenerateResponse(BaseModel):
     request_id: str
-    scenario: Literal["PO"]
+    scenario: Scenario
     workflow_version: str
     options: tuple[Reply, Reply, Reply]

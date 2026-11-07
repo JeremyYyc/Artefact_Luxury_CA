@@ -14,7 +14,7 @@ from backend.models import GenerateInput, GenerateResponse, Preset
 from backend.resources import InvalidInput, Resources
 from backend.workflow import LOGGER, ReplyWorkflow, ReviewError
 
-SERVICE_VERSION = "0.1.0"
+SERVICE_VERSION = "0.2.0"
 NO_STORE = {"Cache-Control": "no-store"}
 
 
@@ -70,7 +70,7 @@ async def generate(input_data: GenerateInput, request: Request, response: Respon
     try:
         async with asyncio.timeout(state.timeout):
             context = state.resources.prepare(input_data)
-            options = await state.workflow.generate(context, state.model, request_id)
+            options = await state.workflow.generate(input_data.scenario, context, state.model, request_id)
     except InvalidInput as error:
         raise HTTPException(422, str(error), headers=NO_STORE) from None
     except ModelRateLimited:

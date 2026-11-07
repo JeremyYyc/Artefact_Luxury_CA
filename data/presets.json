@@ -1,5 +1,95 @@
 [
   {
+    "id": "BG-03",
+    "title": "生日问候 · 通勤小细节",
+    "input": {
+      "scenario": "BG",
+      "client_id": "LIUXI-CL-003",
+      "product_id": "LIUXI-INTERVAL-28",
+      "advisor_goal": "给顾女士发一条简短的祝福。合适的话可以轻轻接上通勤时收放钥匙的聊天。",
+      "outreach": {"occasion": "生日", "send_on": "2026-11-12"},
+      "history": [
+        {"role": "advisor", "text": "您那只 28 最近通勤用得怎么样？", "at": "2026-10-31"},
+        {"role": "customer", "text": "大小正好，拉链也挺顺手。", "at": "2026-10-31"},
+        {"role": "advisor", "text": "您平时带眼镜盒还方便拿吗？", "at": "2026-10-31"},
+        {"role": "customer", "text": "眼镜盒还好。就是挤地铁时，钥匙总得在包底找。", "at": "2026-10-31"},
+        {"role": "advisor", "text": "可以先试着把钥匙放到内侧插袋里。", "at": "2026-10-31"},
+        {"role": "customer", "text": "行，下周上班我试试。", "at": "2026-10-31"}
+      ]
+    }
+  },
+  {
+    "id": "PR-06",
+    "title": "Interval 18 · 硬壳眼镜盒适配",
+    "input": {
+      "scenario": "PR",
+      "client_id": "LIUXI-CL-003",
+      "product_ids": ["LIUXI-INTERVAL-18", "LIUXI-INTERVAL-28"],
+      "history": [
+        {"role": "customer", "text": "晚餐想换个轻点的包，但有时得带硬壳眼镜盒。", "at": "2026-10-31"},
+        {"role": "advisor", "text": "可以先看 18，含肩带空载 390 克。眼镜盒最好用实物试。", "at": "2026-10-31"},
+        {"role": "customer", "text": "28 我上班会用，晚餐就想换轻的。", "at": "2026-10-31"},
+        {"role": "advisor", "text": "那可以先试 18 上身，再看看盒子怎么放。", "at": "2026-10-31"},
+        {"role": "customer", "text": "今天没把盒子带出来。", "at": "2026-10-31"},
+        {"role": "advisor", "text": "有空可以量一下外面的长、宽、厚。", "at": "2026-10-31"}
+      ],
+      "current_message": {"text": "18 能保证放下吗？我现在手边也没尺寸。", "at": "2026-11-06"}
+    }
+  },
+  {
+    "id": "PC-07",
+    "title": "Trace A5 · 拉链卡住纸角",
+    "input": {
+      "scenario": "PC",
+      "client_id": "LIUXI-CL-004",
+      "product_id": "LIUXI-TRACE-A5",
+      "history": [
+        {"role": "advisor", "text": "您那只 Trace A5 最近带去开会了吗？", "at": "2026-11-01"},
+        {"role": "customer", "text": "带了几次。笔放笔环挺顺手，散页我都是临时塞进去。", "at": "2026-11-01"},
+        {"role": "advisor", "text": "散页可以放进文件插袋，拉上前先把纸角收进去。", "at": "2026-11-01"},
+        {"role": "customer", "text": "我走得急的时候，就直接合上了。", "at": "2026-11-01"},
+        {"role": "advisor", "text": "赶时间也可以先摸一下纸边，别让它露在拉链旁。", "at": "2026-11-01"},
+        {"role": "customer", "text": "有次合到一半有点阻力，后来发现就是纸在那儿。", "at": "2026-11-01"},
+        {"role": "advisor", "text": "碰到阻力先停手，看看纸角有没有露出来。", "at": "2026-11-01"}
+      ],
+      "current_message": {"text": "刚才又夹住纸角了。拉链现在不动，我可以加点油吗？", "at": "2026-11-06"}
+    }
+  },
+  {
+    "id": "RE-03",
+    "title": "老客问候 · 关心长夹使用情况",
+    "input": {
+      "scenario": "RE",
+      "client_id": "LIUXI-CL-005",
+      "advisor_goal": "给一段时间没有联系的闻女士发条简短问候，可以轻轻关心她之前提过的长夹拉链。",
+      "history": [
+        {"role": "customer", "text": "我先用一阵子，有问题再问您。", "at": "2025-08-23"},
+        {"role": "advisor", "text": "好的，用着有什么问题都可以微信我。", "at": "2025-08-23"},
+        {"role": "customer", "text": "长夹那条拉链有时有点紧。", "at": "2025-09-02"},
+        {"role": "advisor", "text": "是一直拉着紧，还是只有某一段？", "at": "2025-09-02"},
+        {"role": "customer", "text": "有时候快拉到头时比较紧。我改天有空再带来。", "at": "2025-09-02"},
+        {"role": "advisor", "text": "可以，您按自己的时间来。", "at": "2025-09-02"}
+      ]
+    }
+  },
+  {
+    "id": "EV-03",
+    "title": "皮具护理小课 · 线上场咨询",
+    "input": {
+      "scenario": "EV",
+      "client_id": "LIUXI-CL-002",
+      "product_id": "LIUXI-INTERVAL-CARD-CASE",
+      "event_id": "LIUXI-EVT-20261114-LEATHER-CARE",
+      "history": [
+        {"role": "customer", "text": "买的卡夹已经在用了，卡槽有点小灰，平时怎么清理？", "at": "2026-11-02"},
+        {"role": "advisor", "text": "有松散灰屑可以先把卡取出来，卡槽朝下轻轻抖一下。", "at": "2026-11-02"},
+        {"role": "customer", "text": "好，我试试。", "at": "2026-11-02"},
+        {"role": "advisor", "text": "平时还有什么护理问题，发微信问我就行。", "at": "2026-11-02"}
+      ],
+      "current_message": {"text": "我看到 14 号有护理课，那天出差回不来。有线上场吗？", "at": "2026-11-06"}
+    }
+  },
+  {
     "id": "PO-02",
     "title": "墨黑 Interval 18 · 九折请求",
     "input": {

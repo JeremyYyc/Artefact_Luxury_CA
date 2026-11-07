@@ -11,7 +11,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; }
-button, textarea { font: inherit; }
+button, textarea, select, input { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; opacity: .5; }
 :focus-visible { outline: 2px solid #8b7038; outline-offset: 3px; }
@@ -48,7 +48,10 @@ h3 { font-size: .94rem; margin: 8px 0; }
 details { margin: 10px 0; font-size: .85rem; }
 summary { cursor: pointer; color: var(--green); }
 .field { display: grid; gap: 5px; margin-top: 9px; font-size: .83rem; font-weight: 650; }
-textarea { background: #fbfbf7; color: inherit; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; width: 100%; resize: vertical; font-weight: 400; line-height: 1.55; }
+.preset-picker { grid-template-columns: auto minmax(0, 1fr); align-items: center; margin: 0; min-width: 0; }
+.outreach-fields { display: flex; flex-wrap: wrap; gap: 0 12px; }
+textarea, select, input { background: #fbfbf7; color: inherit; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; width: 100%; font-weight: 400; }
+textarea { resize: vertical; line-height: 1.55; }
 .submit-row, .card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
 button { background: var(--paper); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: .82rem; color: inherit; }
 button:not(:disabled):hover { background: #eef1e8; }

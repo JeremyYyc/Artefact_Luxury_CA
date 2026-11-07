@@ -2,13 +2,26 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 type Message = { text: string; at: string | null };
 type HistoryMessage = Message & { role: 'customer' | 'advisor' };
+const scenarioLabels = {
+  BG: '生日与节日祝福',
+  PR: '商品推荐',
+  PC: '购后护理',
+  RE: '老客唤醒',
+  EV: '活动邀约',
+  PO: '价格异议',
+};
+type Scenario = keyof typeof scenarioLabels;
 type Input = {
-  scenario: 'PO';
+  scenario: Scenario;
   client_id: string;
-  product_id: string;
-  color: string;
+  product_id: string | null;
+  product_ids: string[];
+  color: string | null;
+  event_id: string | null;
+  advisor_goal: string | null;
+  outreach: { occasion: string; send_on: string | null } | null;
   history: HistoryMessage[];
-  current_message: Message;
+  current_message: Message | null;
 };
 type Preset = {
   id: string;
@@ -16,8 +29,9 @@ type Preset = {
   input: Input;
   client_name: string;
   salutation: string;
-  product_name: string;
-  price: { amount: number; currency: 'CNY' };
+  product_names: string[];
+  price: { amount: number; currency: 'CNY' } | null;
+  event_name: string | null;
   strategy_labels: string[];
 };
 type Slot = 1 | 2 | 3;
@@ -44,7 +58,8 @@ function errorText(error: unknown) {
 }
 
 export default function App() {
-  const [preset, setPreset] = useState<Preset>();
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [presetId, setPresetId] = useState('');
   const [input, setInput] = useState<Input>();
   const [loadError, setLoadError] = useState('');
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -58,10 +73,11 @@ export default function App() {
   useEffect(() => {
     const abort = new AbortController();
     fetchJson<Preset[]>('/api/presets', { signal: abort.signal })
-      .then((presets) => {
-        const example = presets.find(({ id }) => id === 'PO-02');
-        if (!example) throw new Error('暂时无法载入 PO-02 示例。');
-        setPreset(example);
+      .then((items) => {
+        const example = items.find(({ id }) => id === 'PO-02') ?? items[0];
+        if (!example) throw new Error('暂时无法载入场景预设。');
+        setPresets(items);
+        setPresetId(example.id);
         setInput(example.input);
       })
       .catch((error: unknown) => {
@@ -70,6 +86,11 @@ export default function App() {
     return () => abort.abort();
   }, [loadAttempt]);
 
+  const preset = presets.find(({ id }) => id === presetId);
+  const message = input?.current_message;
+  const outreach = input?.outreach;
+  const task = message?.text ?? input?.advisor_goal ?? '';
+  const canGenerate = Boolean(task.trim() && (!outreach || outreach.occasion.trim()));
   const usable = Boolean(result && result.input === input && !generating && !generateError);
 
   function changeInput(next: Input) {
@@ -80,9 +101,17 @@ export default function App() {
     setGenerateError('');
   }
 
+  function selectPreset(id: string) {
+    const selected = presets.find((item) => item.id === id);
+    if (!selected) return;
+    setPresetId(selected.id);
+    setResult(undefined);
+    changeInput(selected.input);
+  }
+
   async function generate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!input || generating) return;
+    if (!input || !canGenerate || generating) return;
 
     setGenerating(true);
     setGenerateError('');
@@ -149,22 +178,34 @@ export default function App() {
               {loadError} <button type="button" onClick={() => { setLoadError(''); setLoadAttempt(loadAttempt + 1); }}>重新载入</button>
             </div>
           )}
-          {!preset && !loadError && <p role="status">正在载入 PO-02 示例…</p>}
+          {!preset && !loadError && <p role="status">正在载入场景预设…</p>}
           {preset && input && (
             <form onSubmit={generate} aria-busy={generating}>
               <fieldset disabled={generating}>
                 <div className="case-title">
-                  <span className="tag">{preset.id} · 价格异议</span>
+                  <label className="field preset-picker">
+                    场景预设
+                    <select value={presetId} onChange={(event) => selectPreset(event.target.value)}>
+                      {presets.map((item) => (
+                        <option value={item.id} key={item.id}>
+                          {scenarioLabels[item.input.scenario]} · {item.id}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button type="button" className="text-button" onClick={() => changeInput(structuredClone(preset.input))}>恢复示例</button>
                 </div>
                 <h3>{preset.title}</h3>
                 <div className="facts" aria-label="生成依据">
                   <span>{preset.client_name} · {preset.salutation}</span>
-                  <span>{input.color} · {preset.product_name}</span>
-                  <span>目录价 ¥{priceFormat.format(preset.price.amount)}</span>
-                  <span>优惠待核实</span>
+                  {preset.product_names.map((name, index) => (
+                    <span key={name}>{index === 0 && input.color ? `${input.color} · ${name}` : name}</span>
+                  ))}
+                  {preset.event_name && <span>{preset.event_name}</span>}
+                  {preset.price && <span>目录价 ¥{priceFormat.format(preset.price.amount)}</span>}
+                  {input.scenario === 'PO' && <span>优惠待核实</span>}
                 </div>
-                <details>
+                {input.history.length > 0 && <details key={presetId}>
                   <summary>查看或修改历史对话</summary>
                   {input.history.map((message, index) => (
                     <label className="field" key={index}>
@@ -175,15 +216,34 @@ export default function App() {
                       }} />
                     </label>
                   ))}
-                </details>
+                </details>}
+                {outreach && (
+                  <div className="outreach-fields">
+                    <label className="field">
+                      问候类型
+                      <input required maxLength={60} value={outreach.occasion} onChange={(event) => changeInput({
+                        ...input, outreach: { ...outreach, occasion: event.target.value },
+                      })} />
+                    </label>
+                    <label className="field">
+                      计划发送日期
+                      <input type="date" value={outreach.send_on ?? ''} onChange={(event) => changeInput({
+                        ...input, outreach: { ...outreach, send_on: event.target.value || null },
+                      })} />
+                    </label>
+                  </div>
+                )}
                 <label className="field">
-                  本轮待回复
-                  <textarea rows={2} required maxLength={2000} value={input.current_message.text} onChange={(event) => changeInput({
-                    ...input, current_message: { ...input.current_message, text: event.target.value },
-                  })} />
+                  {message ? '本轮待回复' : '顾问任务'}
+                  <textarea rows={2} required maxLength={2000} value={task} onChange={(event) => {
+                    const text = event.target.value;
+                    changeInput(message
+                      ? { ...input, current_message: { ...message, text } }
+                      : { ...input, advisor_goal: text });
+                  }} />
                 </label>
                 <div className="submit-row">
-                  <button className="primary" type="submit" disabled={!input.current_message.text.trim() || generating}>
+                  <button className="primary" type="submit" disabled={!canGenerate || generating}>
                     {generating ? '正在生成与校验…' : generateError ? '重新生成' : '生成 3 条回复'}
                   </button>
                 </div>
