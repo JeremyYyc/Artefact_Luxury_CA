@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "locale": "zh-CN",
+  "brand": "留隙 LIUXI",
+  "fictional": true,
+  "as_of_date": "2026-11-06",
+  "timezone": "Asia/Shanghai",
+  "segment_definitions": {
+    "new_client": {"label": "新客户", "max_days_since_first_contact": 30},
+    "active_long_term": {"label": "活跃老客户", "min_days_since_first_contact": 365, "max_days_since_last_contact": 90},
+    "lapsed_long_term": {"label": "长期未联系的老客户", "min_days_since_first_contact": 365, "min_days_since_last_contact": 365}
+  },
+  "clients": [
+    {
+      "client_id": "LIUXI-CL-001",
+      "full_name": "沈予禾",
+      "salutation": "沈女士",
+      "age": 29,
+      "gender": "女",
+      "segment": "new_client",
+      "first_contact_date": "2026-11-02",
+      "last_contact_date": "2026-11-04",
+      "recent_purchases": [],
+      "event_participation": []
+    },
+    {
+      "client_id": "LIUXI-CL-002",
+      "full_name": "程叙白",
+      "salutation": "程先生",
+      "age": 34,
+      "gender": "男",
+      "segment": "new_client",
+      "first_contact_date": "2026-10-28",
+      "last_contact_date": "2026-11-02",
+      "recent_purchases": [
+        {
+          "product_id": "LIUXI-INTERVAL-CARD-CASE",
+          "product_name": "Interval Card Case 卡夹",
+          "catalog_status": "current",
+          "purchased_on": "2026-10-30",
+          "transaction_price": {"amount": 3200, "currency": "CNY"}
+        }
+      ],
+      "event_participation": []
+    },
+    {
+      "client_id": "LIUXI-CL-003",
+      "full_name": "顾知遥",
+      "salutation": "顾女士",
+      "age": 42,
+      "gender": "女",
+      "segment": "active_long_term",
+      "first_contact_date": "2023-05-13",
+      "last_contact_date": "2026-10-31",
+      "recent_purchases": [
+        {
+          "product_id": "LIUXI-INTERVAL-CARD-CASE",
+          "product_name": "Interval Card Case 卡夹",
+          "catalog_status": "current",
+          "purchased_on": "2026-09-19",
+          "transaction_price": {"amount": 3200, "currency": "CNY"}
+        },
+        {
+          "product_id": "LIUXI-INTERVAL-28",
+          "product_name": "Interval 28 肩背包",
+          "catalog_status": "current",
+          "purchased_on": "2026-08-22",
+          "transaction_price": {"amount": 18800, "currency": "CNY"}
+        }
+      ],
+      "event_participation": [
+        {
+          "event_id": "LIUXI-EVT-20260919-CARD-CASE",
+          "event_name": "Interval 卡夹色彩体验",
+          "attended_on": "2026-09-19",
+          "status": "attended"
+        },
+        {
+          "event_id": "LIUXI-EVT-20260822-INTERVAL-FITTING",
+          "event_name": "Interval 日用包试背会",
+          "attended_on": "2026-08-22",
+          "status": "attended"
+        }
+      ]
+    },
+    {
+      "client_id": "LIUXI-CL-004",
+      "full_name": "陆怀舟",
+      "salutation": "陆先生",
+      "age": 46,
+      "gender": "男",
+      "segment": "active_long_term",
+      "first_contact_date": "2024-02-24",
+      "last_contact_date": "2026-11-01",
+      "recent_purchases": [
+        {
+          "product_id": "LIUXI-TRACE-A5",
+          "product_name": "Trace A5 拉链文件夹",
+          "catalog_status": "current",
+          "purchased_on": "2026-10-24",
+          "transaction_price": {"amount": 6800, "currency": "CNY"}
+        },
+        {
+          "product_id": "LIUXI-INTERVAL-18",
+          "product_name": "Interval 18 手提包",
+          "catalog_status": "current",
+          "purchased_on": "2026-09-05",
+          "transaction_price": {"amount": 14800, "currency": "CNY"}
+        }
+      ],
+      "event_participation": [
+        {
+          "event_id": "LIUXI-EVT-20261017-TRACE-PREVIEW",
+          "event_name": "Trace A5 上市前私享预览",
+          "attended_on": "2026-10-17",
+          "status": "attended"
+        }
+      ]
+    },
+    {
+      "client_id": "LIUXI-CL-005",
+      "full_name": "闻静岚",
+      "salutation": "闻女士",
+      "age": 51,
+      "gender": "女",
+      "segment": "lapsed_long_term",
+      "first_contact_date": "2024-06-08",
+      "last_contact_date": "2025-09-02",
+      "recent_purchases": [
+        {
+          "product_id": "LIUXI-ARCHIVE-ZIP-WALLET",
+          "product_name": "留隙拉链长夹",
+          "catalog_status": "archived",
+          "purchased_on": "2025-08-23",
+          "transaction_price": {"amount": 4800, "currency": "CNY"}
+        }
+      ],
+      "event_participation": []
+    }
+  ]
+}

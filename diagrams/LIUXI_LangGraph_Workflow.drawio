@@ -1,0 +1,268 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="liuxi-langgraph" name="LIUXI 工作流">
+    <mxGraphModel dx="1530" dy="921" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="1070" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;text;align=left;verticalAlign=middle;spacing=0;fontSize=30;fontColor=#17283E;fontStyle=1;strokeColor=none;fillColor=none;connectable=0;" value="LIUXI 微信话术生成工作流" vertex="1">
+          <mxGeometry height="43" width="1300" x="64" y="27" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;text;align=left;verticalAlign=middle;spacing=0;fontSize=15;fontColor=#455B72;fontStyle=0;strokeColor=none;fillColor=none;connectable=0;" value="LangGraph  ·  六选一场景路由  /  三条候选并发生成  /  校验与定向重写" vertex="1">
+          <mxGeometry height="24" width="1300" x="65" y="72" as="geometry" />
+        </mxCell>
+        <mxCell id="scene-band" parent="1" style="rounded=1;arcSize=12;fillColor=#F4F7FC;strokeColor=none;connectable=0;" value="" vertex="1">
+          <mxGeometry height="136" width="1312" x="64" y="299" as="geometry" />
+        </mxCell>
+        <mxCell id="stage-route" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;text;align=left;verticalAlign=middle;spacing=0;fontSize=15;fontColor=#3F5F89;fontStyle=1;strokeColor=none;fillColor=none;connectable=0;" value="01  场景路由" vertex="1">
+          <mxGeometry height="24" width="185" x="80" y="133" as="geometry" />
+        </mxCell>
+        <mxCell id="stage-scene" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;text;align=left;verticalAlign=middle;spacing=0;fontSize=15;fontColor=#3F5F89;fontStyle=1;strokeColor=none;fillColor=none;connectable=0;" value="02  场景节点 · 六选一" vertex="1">
+          <mxGeometry height="22" width="230" x="80" y="304" as="geometry" />
+        </mxCell>
+        <mxCell id="stage-generate" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;text;align=left;verticalAlign=middle;spacing=0;fontSize=15;fontColor=#226B65;fontStyle=1;strokeColor=none;fillColor=none;connectable=0;" value="03  并发生成" vertex="1">
+          <mxGeometry height="22" width="200" x="80" y="562" as="geometry" />
+        </mxCell>
+        <mxCell id="stage-review" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;text;align=left;verticalAlign=middle;spacing=0;fontSize=15;fontColor=#3F5F89;fontStyle=1;strokeColor=none;fillColor=none;connectable=0;" value="04  汇总与校验" vertex="1">
+          <mxGeometry height="22" width="200" x="80" y="819" as="geometry" />
+        </mxCell>
+        <mxCell id="input" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#ECF3FF;strokeColor=#789AD1;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;顾问输入&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;客户资料、聊天记录、场景、相关商品或活动&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="400" x="520" y="117" as="geometry" />
+        </mxCell>
+        <mxCell id="route" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rhombus;fillColor=#ECF3FF;strokeColor=#789AD1;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;确认场景&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;优先用已选场景&lt;br&gt;未选时识别意图&lt;/span&gt;" vertex="1">
+          <mxGeometry height="92" width="220" x="610" y="207" as="geometry" />
+        </mxCell>
+        <mxCell id="clarify" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFF4E2;strokeColor=#C39752;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;请顾问确认场景&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;意图不明确时，请顾问确认&lt;/span&gt;" vertex="1">
+          <mxGeometry height="58" width="278" x="1065" y="224" as="geometry" />
+        </mxCell>
+        <mxCell id="greetings" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#9CB4DA;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;Birthday and Festive Greetings (BG)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="200" x="82" y="354" as="geometry" />
+        </mxCell>
+        <mxCell id="recommendation" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#9CB4DA;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;Product Recommandation (PR)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="200" x="297" y="354" as="geometry" />
+        </mxCell>
+        <mxCell id="care" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#9CB4DA;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;Post-purchase Care (PC)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="200" x="512" y="354" as="geometry" />
+        </mxCell>
+        <mxCell id="reactivation" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#9CB4DA;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;Reactivation (RE)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="200" x="727" y="354" as="geometry" />
+        </mxCell>
+        <mxCell id="invitation" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#9CB4DA;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;Event Invitation (EV)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="200" x="942" y="354" as="geometry" />
+        </mxCell>
+        <mxCell id="price" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#9CB4DA;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;Price Objection (PO)&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="200" x="1157" y="354" as="geometry" />
+        </mxCell>
+        <mxCell id="prepare" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#ECF3FF;strokeColor=#789AD1;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;准备共享上下文和三份提示词 (3*6)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: rgb(69, 91, 114);&quot;&gt;按场景取用事实，分配三个不同的沟通策略&lt;/span&gt;" vertex="1">
+          <mxGeometry height="67" width="448" x="496" y="476" as="geometry" />
+        </mxCell>
+        <mxCell id="missing" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFF4E2;strokeColor=#C39752;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;请顾问补充资料&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;例如补齐活动时间或更换已过期活动&lt;/span&gt;" vertex="1">
+          <mxGeometry height="57" width="278" x="1065" y="481" as="geometry" />
+        </mxCell>
+        <mxCell id="dispatch" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#E8F7F5;strokeColor=#65AFA7;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;分发待生成的选项&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;首次发送三个任务，重写时只发送失败项&lt;/span&gt;" vertex="1">
+          <mxGeometry height="62" width="346" x="547" y="584" as="geometry" />
+        </mxCell>
+        <mxCell id="output-1" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#E8F7F5;strokeColor=#65AFA7;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;生成 Output 1&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;策略提示词 1 · 单次 LLM 调用&lt;/span&gt;" vertex="1">
+          <mxGeometry height="66" width="240" x="337" y="693" as="geometry" />
+        </mxCell>
+        <mxCell id="output-2" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#E8F7F5;strokeColor=#65AFA7;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;生成 Output 2&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;策略提示词 2 · 单次 LLM 调用&lt;/span&gt;" vertex="1">
+          <mxGeometry height="66" width="240" x="600" y="693" as="geometry" />
+        </mxCell>
+        <mxCell id="output-3" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#E8F7F5;strokeColor=#65AFA7;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;生成 Output 3&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;策略提示词 3 · 单次 LLM 调用&lt;/span&gt;" vertex="1">
+          <mxGeometry height="66" width="240" x="863" y="693" as="geometry" />
+        </mxCell>
+        <mxCell id="validate" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#ECF3FF;strokeColor=#789AD1;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;汇总并校验&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;按编号排序 · 查格式和事实 · 整组审阅与去重&lt;/span&gt;" vertex="1">
+          <mxGeometry height="73" width="460" x="490" y="824" as="geometry" />
+        </mxCell>
+        <mxCell id="repair" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#FFF4E2;strokeColor=#C39752;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;定向重写失败项&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;保留合格项，传入失败原因 · 最多一轮&lt;/span&gt;" vertex="1">
+          <mxGeometry height="68" width="295" x="105" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="success" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#EAF7EE;strokeColor=#78AC86;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;交付三条合格话术&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;顾问选择、编辑和发送&lt;/span&gt;" vertex="1">
+          <mxGeometry height="68" width="340" x="550" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="partial" parent="1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;rounded=1;arcSize=14;fillColor=#F4F6F9;strokeColor=#A2AFBF;strokeWidth=1.25;fontSize=16;spacing=5;" value="&lt;b&gt;返回已通过项并标明未齐&lt;/b&gt;&lt;br&gt;&lt;span style=&#39;font-size:12px;color:#455B72&#39;&gt;无合格项时提示生成失败&lt;/span&gt;" vertex="1">
+          <mxGeometry height="68" width="295" x="1031" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="e-input-route" edge="1" parent="1" source="input" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="route" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-route-clarify" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#986A2D;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" target="clarify" value="意图不明确">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-greetings" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="greetings" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="334" />
+              <mxPoint x="182" y="334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-greetings-prepare" edge="1" parent="1" source="greetings" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="prepare" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="182" y="450" />
+              <mxPoint x="720" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-recommendation" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="recommendation" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="334" />
+              <mxPoint x="397" y="334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-recommendation-prepare" edge="1" parent="1" source="recommendation" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="prepare" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="397" y="450" />
+              <mxPoint x="720" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-care" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="care" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="334" />
+              <mxPoint x="612" y="334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-care-prepare" edge="1" parent="1" source="care" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="prepare" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="612" y="450" />
+              <mxPoint x="720" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-reactivation" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="reactivation" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="334" />
+              <mxPoint x="827" y="334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-reactivation-prepare" edge="1" parent="1" source="reactivation" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="prepare" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="827" y="450" />
+              <mxPoint x="720" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-invitation" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="invitation" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="334" />
+              <mxPoint x="1042" y="334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-invitation-prepare" edge="1" parent="1" source="invitation" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="prepare" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1042" y="450" />
+              <mxPoint x="720" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-route-price" edge="1" parent="1" source="route" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="price" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="334" />
+              <mxPoint x="1257" y="334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-price-prepare" edge="1" parent="1" source="price" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="prepare" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1257" y="450" />
+              <mxPoint x="720" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-prepare-missing" edge="1" parent="1" source="prepare" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#986A2D;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" target="missing" value="缺少关键资料">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-prepare-dispatch" edge="1" parent="1" source="prepare" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#596D86;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="dispatch" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-dispatch-output-1" edge="1" parent="1" source="dispatch" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#398881;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="output-1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="669" />
+              <mxPoint x="457" y="669" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-output-1-validate" edge="1" parent="1" source="output-1" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#398881;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="validate" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="457" y="790" />
+              <mxPoint x="720" y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-dispatch-output-2" edge="1" parent="1" source="dispatch" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#398881;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="output-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-output-2-validate" edge="1" parent="1" source="output-2" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#398881;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="validate" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-dispatch-output-3" edge="1" parent="1" source="dispatch" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#398881;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="output-3" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="669" />
+              <mxPoint x="983" y="669" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-output-3-validate" edge="1" parent="1" source="output-3" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#398881;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="validate" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="983" y="790" />
+              <mxPoint x="720" y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-validate-success" edge="1" parent="1" source="validate" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#518564;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="success" value="三条通过">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="46" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-validate-repair" edge="1" parent="1" source="validate" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#986A2D;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="repair" value="可修复且还有时间">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-11" as="offset" />
+            <Array as="points">
+              <mxPoint x="252.5" y="860.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-validate-partial" edge="1" parent="1" source="validate" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#697D95;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="partial" value="超时或重写后仍失败">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-11" as="offset" />
+            <Array as="points">
+              <mxPoint x="1178.5" y="860.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-repair-dispatch" edge="1" parent="1" source="repair" style="html=1;whiteSpace=wrap;fontFamily=PingFang SC,Microsoft YaHei,sans-serif;fontColor=#17283E;edgeStyle=segmentEdgeStyle;orthogonal=1;rounded=0;endArrow=blockThin;endFill=1;strokeWidth=1.45;strokeColor=#986A2D;fontSize=13;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=0;entryY=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 4;" target="dispatch" value="仅重写失败项">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="52" as="offset" />
+            <Array as="points">
+              <mxPoint x="52" y="984" />
+              <mxPoint x="52" y="615" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

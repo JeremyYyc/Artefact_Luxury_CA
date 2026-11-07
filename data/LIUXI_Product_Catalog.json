@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.0",
+  "locale": "zh-CN",
+  "brand": {
+    "name_zh": "留隙",
+    "name_en": "LIUXI",
+    "origin_city": "上海",
+    "fictional": true,
+    "positioning": "以上海为起点的奢侈皮具品牌，面向重视设计、材质与日常搭配的都市顾客。以错层皮革形成的阴影线作为 Interval 系列的设计标识。"
+  },
+  "catalog_date": "2026-11-06",
+  "similar_product_groups": [
+    {
+      "name": "日用肩背包",
+      "product_ids": ["LIUXI-INTERVAL-28", "LIUXI-INTERVAL-18"],
+      "shared_features": ["支持肩背", "顶部拉链", "内侧插袋"],
+      "selection_guide": "常带眼镜盒或短折伞，可先试 Interval 28。平时只带手机、薄卡夹和钥匙等小物，或希望在手提与肩背之间切换，可先试 Interval 18。"
+    }
+  ],
+  "products": [
+    {
+      "product_id": "LIUXI-INTERVAL-28",
+      "name": "Interval 28 肩背包",
+      "collection": "Interval",
+      "product_type": "肩背包",
+      "positioning": "日用主打款。适合工作日携带眼镜盒、短折伞等随身物品，也能用于下班后的聚会。",
+      "price": {"amount": 18800, "currency": "CNY"},
+      "launch_date": "2026-08-20",
+      "materials_and_craft": {
+        "exterior": "粒面小牛皮",
+        "lining": "微纤维内衬",
+        "craft_details": ["错层皮革包身", "手工油边"]
+      },
+      "color_options": [
+        {"color": "墨黑", "stock_quantity": 7},
+        {"color": "岩灰", "stock_quantity": 5},
+        {"color": "栗棕", "stock_quantity": 2}
+      ],
+      "weight": {"grams": 620, "measurement_basis": "空载，含固定肩带"},
+      "size_and_capacity": {
+        "external_dimensions_cm": {"width": 28, "height": 20, "depth": 10},
+        "measurement_basis": "仅测量包身外部",
+        "typical_contents": ["手机", "卡夹", "钥匙", "眼镜盒", "短折伞"]
+      },
+      "inventory": {"location": "上海精品店", "as_of_date": "2026-11-06", "total_quantity": 14},
+      "use_cases_and_features": {
+        "use_cases": ["日常通勤", "下班后聚会"],
+        "features": ["固定肩带", "顶部拉链", "内侧插袋"]
+      },
+      "care_manual": {
+        "manual_id": "LIUXI-CARE-INTERVAL-28",
+        "title": "Interval 28 肩背包护理手册",
+        "pdf_url": "https://example.invalid/liuxi/manuals/interval-28-v1.0.pdf",
+        "version": "1.0",
+        "publication_date": "2026-11-06",
+        "applicable_product_ids": ["LIUXI-INTERVAL-28"],
+        "applicable_materials": ["粒面小牛皮"],
+        "applicable_parts": ["包身叠层", "固定肩带"],
+        "care_topics": [
+          {"topic": "日常清洁", "steps": ["用干燥软布轻拭包身。", "叠层边缘有浮灰时，用软布沿外缘轻拭。"]},
+          {"topic": "雨滴处理", "steps": ["用干净的浅色软布轻按吸水。", "放在阴凉通风处自然晾干。"]},
+          {"topic": "收纳", "steps": ["确认包身干燥后，用干净的无色薄纸轻撑包形。", "套上防尘袋，将肩带自然平放。"]}
+        ],
+        "avoid": ["刷洗皮纹", "把清洁工具伸进叠层", "用吹风机加速晾干"],
+        "contact_advisor_when": ["晾干后仍有水印", "叠层边缘翘起", "肩带接缝松动"]
+      }
+    },
+    {
+      "product_id": "LIUXI-INTERVAL-18",
+      "name": "Interval 18 手提包",
+      "collection": "Interval",
+      "product_type": "手提包",
+      "positioning": "轻装日用款。适合只带少量随身小物、希望在手提与肩背之间切换的顾客。",
+      "price": {"amount": 14800, "currency": "CNY"},
+      "launch_date": "2026-08-20",
+      "materials_and_craft": {
+        "exterior": "平滑小牛皮",
+        "lining": "微纤维内衬",
+        "hardware": ["金属肩带扣"],
+        "craft_details": ["错层皮革包身", "手工油边"]
+      },
+      "color_options": [
+        {"color": "墨黑", "stock_quantity": 4},
+        {"color": "岩灰", "stock_quantity": 0},
+        {"color": "栗棕", "stock_quantity": 3}
+      ],
+      "weight": {"grams": 390, "measurement_basis": "空载，含可拆肩带"},
+      "size_and_capacity": {
+        "external_dimensions_cm": {"width": 18, "height": 14, "depth": 8},
+        "measurement_basis": "仅测量包身外部",
+        "typical_contents": ["手机", "薄卡夹", "钥匙", "一支口红"]
+      },
+      "inventory": {"location": "上海精品店", "as_of_date": "2026-11-06", "total_quantity": 7},
+      "use_cases_and_features": {
+        "use_cases": ["轻装出门", "周末外出", "晚餐"],
+        "features": ["可手提", "可拆肩带支持肩背", "顶部拉链", "内侧插袋"]
+      },
+      "care_manual": {
+        "manual_id": "LIUXI-CARE-INTERVAL-18",
+        "title": "Interval 18 手提包护理手册",
+        "pdf_url": "https://example.invalid/liuxi/manuals/interval-18-v1.0.pdf",
+        "version": "1.0",
+        "publication_date": "2026-11-06",
+        "applicable_product_ids": ["LIUXI-INTERVAL-18"],
+        "applicable_materials": ["平滑小牛皮", "金属"],
+        "applicable_parts": ["包面", "包角", "可拆肩带", "肩带扣"],
+        "care_topics": [
+          {"topic": "包面指印", "steps": ["用干燥的浅色软布轻拭指印。", "发现油迹或染色时，先停止擦拭。"]},
+          {"topic": "衣物接触", "steps": ["背包时留意深色衣料与包身接触的位置，尤其是浅色包面与容易摩擦的包角。"]},
+          {"topic": "肩带与包身收纳", "steps": ["取下肩带，用干净软布包住金属扣。", "将肩带和包身分开放入防尘袋。"]}
+        ],
+        "avoid": ["用湿巾反复擦拭划痕", "让金属扣长时间贴压包面"],
+        "contact_advisor_when": ["出现衣物染色", "出现明显划痕", "肩带扣闭合不稳"]
+      }
+    },
+    {
+      "product_id": "LIUXI-INTERVAL-CARD-CASE",
+      "name": "Interval Card Case 卡夹",
+      "collection": "Interval",
+      "product_type": "卡夹",
+      "positioning": "入门皮具与赠礼款。以卡夹短边的错层细节延续 Interval 系列的设计，便于随身携带常用卡片。",
+      "price": {"amount": 3200, "currency": "CNY"},
+      "launch_date": "2026-09-17",
+      "materials_and_craft": {
+        "exterior": "交叉压纹小牛皮",
+        "craft_details": ["短边错层皮革", "手工油边"]
+      },
+      "color_options": [
+        {"color": "墨黑", "stock_quantity": 10},
+        {"color": "岩灰", "stock_quantity": 8},
+        {"color": "栗棕", "stock_quantity": 6}
+      ],
+      "weight": {"grams": 42, "measurement_basis": "空载"},
+      "size_and_capacity": {
+        "external_dimensions_cm": {"width": 10.5, "height": 7, "depth": 0.8},
+        "measurement_basis": "卡夹外尺寸",
+        "capacity": {"front_card_slots": 2, "back_card_slots": 2, "center_compartments": 1},
+        "typical_contents": ["四张常规厚度卡片", "少量折叠纸币"]
+      },
+      "inventory": {"location": "上海精品店", "as_of_date": "2026-11-06", "total_quantity": 24},
+      "use_cases_and_features": {
+        "use_cases": ["轻量通勤", "换包", "赠礼"],
+        "features": ["正反各两个卡槽", "中央隔层可放少量折叠纸币", "短边保留错层皮革细节"]
+      },
+      "care_manual": {
+        "manual_id": "LIUXI-CARE-INTERVAL-CARD-CASE",
+        "title": "Interval Card Case 卡夹护理手册",
+        "pdf_url": "https://example.invalid/liuxi/manuals/interval-card-case-v1.0.pdf",
+        "version": "1.0",
+        "publication_date": "2026-11-06",
+        "applicable_product_ids": ["LIUXI-INTERVAL-CARD-CASE"],
+        "applicable_materials": ["交叉压纹小牛皮"],
+        "applicable_parts": ["卡槽", "油边"],
+        "care_topics": [
+          {"topic": "卡槽与外表清洁", "steps": ["取出卡片，将卡槽朝下轻抖，去除松散灰屑。", "用干燥软布轻拭外表。"]},
+          {"topic": "装卡与取卡", "steps": ["每个卡槽放一张常规厚度的卡片。", "取卡时顺着卡槽方向抽出。"]},
+          {"topic": "沾水处理", "steps": ["取出卡片，用干净软布轻按吸水。", "平放在阴凉通风处自然晾干。"]}
+        ],
+        "avoid": ["在单个卡槽塞入多张厚卡", "用尖物清理卡槽", "与钥匙长期放在同一口袋"],
+        "contact_advisor_when": ["卡槽开线", "油边开裂", "卡片容易滑出"]
+      }
+    },
+    {
+      "product_id": "LIUXI-TRACE-A5",
+      "name": "Trace A5 拉链文件夹",
+      "collection": "Trace",
+      "product_type": "拉链文件夹",
+      "positioning": "商务功能皮具。面向需要在会议与短途差旅中集中收纳 A5 笔记本、纸品和笔的顾客。",
+      "price": {"amount": 6800, "currency": "CNY"},
+      "launch_date": "2026-10-22",
+      "materials_and_craft": {
+        "exterior": "粒面小牛皮",
+        "lining": "棉斜纹内衬",
+        "hardware": ["金属拉链"],
+        "craft_details": ["手工油边"]
+      },
+      "color_options": [
+        {"color": "墨黑", "stock_quantity": 3},
+        {"color": "栗棕", "stock_quantity": 4}
+      ],
+      "weight": {"grams": 320, "measurement_basis": "空载"},
+      "size_and_capacity": {
+        "external_dimensions_cm": {"width": 24, "height": 17.5, "depth": 2.5},
+        "internal_dimensions_cm_approx": {"width": 22.5, "height": 16, "depth": 2},
+        "measurement_basis": "外尺寸为文件夹外部尺寸，内尺寸为主仓可用空间",
+        "typical_contents": ["A5 笔记本", "会议纸品", "一支笔"]
+      },
+      "inventory": {"location": "上海精品店", "as_of_date": "2026-11-06", "total_quantity": 7},
+      "use_cases_and_features": {
+        "use_cases": ["会议", "短途差旅"],
+        "features": ["三边金属拉链", "文件插袋", "笔环"]
+      },
+      "care_manual": {
+        "manual_id": "LIUXI-CARE-TRACE-A5",
+        "title": "Trace A5 拉链文件夹护理手册",
+        "pdf_url": "https://example.invalid/liuxi/manuals/trace-a5-v1.0.pdf",
+        "version": "1.0",
+        "publication_date": "2026-11-06",
+        "applicable_product_ids": ["LIUXI-TRACE-A5"],
+        "applicable_materials": ["粒面小牛皮", "棉斜纹布", "金属"],
+        "applicable_parts": ["外层皮革", "内衬", "拉链", "文件插袋"],
+        "care_topics": [
+          {"topic": "外层皮革清洁", "steps": ["用干燥软布轻拭皮面。"]},
+          {"topic": "内衬清洁", "steps": ["取出纸品和笔，抖去松散纸屑。", "用干燥软布轻拭内衬。"]},
+          {"topic": "拉链使用与卡滞处理", "steps": ["拉合前把纸张边缘收进插袋。", "拉链卡住时轻轻退回拉头，移开纸角后再试。"]},
+          {"topic": "内衬沾清水", "steps": ["取出物品，用干净软布轻按吸水。", "打开放平，在阴凉通风处自然晾干。"]}
+        ],
+        "avoid": ["自行给拉链加油", "把渗墨的笔或潮湿纸品留在夹内"],
+        "contact_advisor_when": ["发现墨渍", "内衬脱线", "移开异物后拉链仍卡住"]
+      }
+    }
+  ]
+}

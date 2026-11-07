@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "locale": "zh-CN",
+  "brand": "留隙 LIUXI",
+  "fictional": true,
+  "as_of_date": "2026-11-06",
+  "timezone": "Asia/Shanghai",
+  "events": [
+    {
+      "event_id": "LIUXI-EVT-20260822-INTERVAL-FITTING",
+      "name": "Interval 日用包试背会",
+      "event_type": "boutique_event",
+      "status": "completed",
+      "starts_at": "2026-08-22T14:00:00+08:00",
+      "ends_at": "2026-08-22T15:00:00+08:00",
+      "venue": {"city": "上海", "name": "留隙上海精品店", "area": "主陈列区"},
+      "description": "顾客可带上平日常用的小物，现场对照两款 Interval 包的容量、开合和上身效果。",
+      "highlights": ["对比 Interval 28 的固定肩带与 Interval 18 的可拆肩带", "试放手机、眼镜盒或短折伞，按实际携带习惯挑选尺寸"],
+      "featured_product_ids": ["LIUXI-INTERVAL-28", "LIUXI-INTERVAL-18"],
+      "audience": ["对日用肩背包有兴趣的顾客", "曾咨询过 Interval 尺寸差异的顾客"],
+      "rsvp": {
+        "status": "closed",
+        "access": "reservation_required",
+        "channel": "微信回复品牌顾问",
+        "deadline_at": "2026-08-21T18:00:00+08:00",
+        "capacity": 12,
+        "max_guests_per_invitee": 1
+      }
+    },
+    {
+      "event_id": "LIUXI-EVT-20260919-CARD-CASE",
+      "name": "Interval 卡夹色彩体验",
+      "event_type": "boutique_event",
+      "status": "completed",
+      "starts_at": "2026-09-19T15:00:00+08:00",
+      "ends_at": "2026-09-19T15:45:00+08:00",
+      "venue": {"city": "上海", "name": "留隙上海精品店", "area": "小皮具陈列区"},
+      "description": "顾客可并排比较三款颜色，在店内光线下观察交叉压纹和短边错层，也可试用卡槽。",
+      "highlights": ["并排展示墨黑、岩灰与栗棕", "试放常用卡片与少量折叠纸币"],
+      "featured_product_ids": ["LIUXI-INTERVAL-CARD-CASE"],
+      "audience": ["有小皮具赠礼需求的顾客", "希望了解卡夹颜色和容量的顾客"],
+      "rsvp": {
+        "status": "closed",
+        "access": "reservation_required",
+        "channel": "微信回复品牌顾问",
+        "deadline_at": "2026-09-18T18:00:00+08:00",
+        "capacity": 10,
+        "max_guests_per_invitee": 1
+      }
+    },
+    {
+      "event_id": "LIUXI-EVT-20261017-TRACE-PREVIEW",
+      "name": "Trace A5 上市前私享预览",
+      "event_type": "private_preview",
+      "status": "completed",
+      "starts_at": "2026-10-17T16:00:00+08:00",
+      "ends_at": "2026-10-17T16:45:00+08:00",
+      "venue": {"city": "上海", "name": "留隙上海精品店", "area": "预约会客区"},
+      "description": "受邀顾客在 Trace A5 正式上市前查看展示样品，并试用文件插袋、笔环与三边拉链。",
+      "highlights": ["体验墨黑与栗棕两款展示样品", "试放 A5 笔记本，感受主仓空间和取放方式"],
+      "featured_product_ids": ["LIUXI-TRACE-A5"],
+      "public_milestone": {"type": "product_launch", "date": "2026-10-22"},
+      "audience": ["曾咨询商务皮具的顾客", "有会议或短途差旅收纳需求的顾客"],
+      "rsvp": {
+        "status": "closed",
+        "access": "invite_only",
+        "channel": "微信回复发出邀请的品牌顾问",
+        "deadline_at": "2026-10-16T18:00:00+08:00",
+        "capacity": 6,
+        "max_guests_per_invitee": 0
+      }
+    },
+    {
+      "event_id": "LIUXI-EVT-20261114-LEATHER-CARE",
+      "name": "换季皮具护理小课",
+      "event_type": "boutique_event",
+      "status": "upcoming",
+      "starts_at": "2026-11-14T14:30:00+08:00",
+      "ends_at": "2026-11-14T15:15:00+08:00",
+      "venue": {"city": "上海", "name": "留隙上海精品店", "area": "护理演示区"},
+      "description": "顾问用展示样品演示粒面与平滑小牛皮的日常护理。顾客可以带上自己的留隙皮具，就具体使用问题和顾问交流。",
+      "highlights": ["演示雨滴吸干、包形支撑与肩带收纳", "交流浅色皮面遇到深色衣物时的护理注意事项"],
+      "featured_product_ids": ["LIUXI-INTERVAL-28", "LIUXI-INTERVAL-18"],
+      "audience": ["已购买留隙皮具的顾客", "曾询问清洁、雨天使用或收纳方式的顾客"],
+      "rsvp": {
+        "status": "open",
+        "access": "reservation_required",
+        "channel": "微信回复品牌顾问，由顾问确认席位",
+        "deadline_at": "2026-11-13T18:00:00+08:00",
+        "capacity": 10,
+        "max_guests_per_invitee": 1
+      }
+    },
+    {
+      "event_id": "LIUXI-EVT-20261121-WINTER-PREVIEW",
+      "name": "Interval 冬日陈列私享预览",
+      "event_type": "private_preview",
+      "status": "upcoming",
+      "starts_at": "2026-11-21T16:00:00+08:00",
+      "ends_at": "2026-11-21T16:45:00+08:00",
+      "venue": {"city": "上海", "name": "留隙上海精品店", "area": "预约会客区"},
+      "description": "冬日陈列正式开放前，受邀顾客可先看 Interval 现有款式与冬季外套的搭配，并试背两款包。",
+      "highlights": ["试背 Interval 28 与 Interval 18，比较外套上身后的肩带位置和取物动作", "观察墨黑与栗棕在不同光线和衣料旁的色泽"],
+      "featured_product_ids": ["LIUXI-INTERVAL-28", "LIUXI-INTERVAL-18"],
+      "public_milestone": {"type": "boutique_display_opening", "date": "2026-11-22"},
+      "audience": ["近期对 Interval 包款感兴趣的顾客", "希望试背或比较冬季搭配的顾客"],
+      "rsvp": {
+        "status": "open",
+        "access": "invite_only",
+        "channel": "微信回复发出邀请的品牌顾问，由顾问确认席位",
+        "deadline_at": "2026-11-20T18:00:00+08:00",
+        "capacity": 6,
+        "max_guests_per_invitee": 0
+      }
+    }
+  ]
+}
