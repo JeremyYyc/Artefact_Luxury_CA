@@ -356,7 +356,7 @@ def check_group(scenario: Scenario, drafts: list[Draft], review: dict, locked: f
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = f'{pack["prompt_version"]}+fact-grounding.5'
+        self.version = f'{pack["prompt_version"]}+fact-grounding.6'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()
@@ -452,6 +452,11 @@ class ReplyWorkflow:
         if fact_checks:
             guidance = "\n".join(rule.guidance for rule in fact_checks)
             strategy_prompt += f"\n\n本轮事实边界适用于所有候选和补写稿。\n{guidance}"
+        optional_reactivation = scenario == "RE" and not context.get("current_message") and bool(
+            re.search(r"合适的话|如果合适|可以轻轻", context.get("advisor_goal") or "")
+        )
+        if optional_reactivation and slot in (1, 3):
+            strategy_prompt += "\n\n顾问提到的旧话题是可选项，由第二路承接。本路省略该话题，按上面的分路完成问候。"
         feedback = task.get("feedback")
         feedback_block = ""
         if feedback:
@@ -459,6 +464,8 @@ class ReplyWorkflow:
                 feedback_json=as_json(feedback),
             )
         prompt_context = context
+        if optional_reactivation and slot == 1:
+            prompt_context = {**context, "history": []}
         if scenario == "EV" and public_display_context(context):
             prompt_context = {
                 **context, "events": [{key: value for key, value in event.items() if key != "highlights"}

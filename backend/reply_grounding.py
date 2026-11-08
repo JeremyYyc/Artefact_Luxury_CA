@@ -122,7 +122,7 @@ def reply_fact_checks(scenario: Scenario, context: dict) -> list[FactCheck]:
             variants = r"(?:四|4)" if count in ("四", "4") else re.escape(count)
             stronger = check(
                 rf"(?:经常|常常|常|总是|每次|平时都)[^，。！？]{{0,6}}带\s*{variants}\s*张卡",
-                "历史只说有时带这些卡，保留「有时」等原有频率，不把它升级为常态。",
+                "用卡频率仅用于校验，不是共同必答点。若本路确实引用了带卡习惯，不得把偶尔发生说成常态。",
             )
             if not stronger.claim.search(known):
                 checks.append(stronger)
