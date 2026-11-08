@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from app import app
+from backend.deepseek import ModelError, ModelRateLimited
 from backend.models import GenerateInput
 from backend.resources import InvalidInput, Resources, invite_state
 from backend.workflow import ReplyWorkflow, ReviewError, WorkflowRuntime, contract_issues, generation_mode, precheck
@@ -92,9 +93,9 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_does_not_return_partial_replies_when_retry_has_no_text(self):
         model = StubModel(blank_retry=True)
-        with self.assertRaisesRegex(ReviewError, "three nonempty replies"):
+        with self.assertRaisesRegex(ReviewError, "three replies"):
             await self.workflow.generate("PO", self.context, model, "test")
-        self.assertEqual(model.retried_slots, [1])
+        self.assertEqual(model.retried_slots, [1, 1])
         self.assertEqual(len(model.review_payloads), 1)
 
     async def test_precheck_retries_even_if_reviewer_passes_a_rejected_draft(self):
@@ -103,17 +104,80 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.retried_slots, [1])
         self.assertEqual(replies[0].text, DRAFTS[1])
 
-    async def test_regenerated_reply_is_not_subject_to_a_second_content_check(self):
+    async def test_regeneration_cannot_return_an_unauthorized_price(self):
         model = StubModel(ignore_precheck=True, persist_failure=True)
-        replies = await self.workflow.generate("PO", self.context, model, "test")
-        self.assertEqual(model.retried_slots, [1])
+        with self.assertRaisesRegex(ReviewError, "three replies"):
+            await self.workflow.generate("PO", self.context, model, "test")
+        self.assertEqual(model.retried_slots, [1, 1])
         self.assertEqual(len(model.review_payloads), 1)
-        self.assertTrue(precheck(replies[0].text, self.context))
-        self.assertEqual(replies[0].review_status, "regenerated")
+
+    async def test_duplicate_retry_does_not_displace_the_locked_slot(self):
+        class DuplicateRetry(StubModel):
+            async def complete(self, messages, *, max_tokens):
+                raw = await super().complete(messages, max_tokens=max_tokens)
+                if self.retried_slots == [1]:
+                    return json.dumps({"text": DRAFTS[2]})
+                return raw
+
+        model = DuplicateRetry()
+        replies = await self.workflow.generate("PO", self.context, model, "test")
+        self.assertEqual(model.retried_slots, [1, 1])
+        self.assertEqual([(reply.slot, reply.text) for reply in replies], list(DRAFTS.items()))
+        self.assertEqual([item["slot"] for item in model.feedback["passed_replies"]], [2, 3])
+        self.assertEqual(model.feedback["issues"][0]["related_slot"], 2)
+
+    async def test_same_store_trial_in_different_wording_retries_one_slot(self):
+        class TrialModel:
+            def __init__(self):
+                self.retried = []
+
+            async def complete(self, messages, *, max_tokens):
+                body = messages[1]["content"].split("\n", 1)[1]
+                payload, offset = json.JSONDecoder().raw_decode(body)
+                if "options" in payload:
+                    return json.dumps({"slot_results": [reviewed_slot(i) for i in (1, 2, 3)], "rerun_slots": []})
+                slot = payload["slot"]
+                if body[offset:].strip():
+                    self.retried.append(slot)
+                    return json.dumps({"text": "外尺寸无法判断。方便时量一下镜盒最厚的地方，我先帮您初筛。"})
+                texts = {
+                    1: "这款的外尺寸不代表开口大小。建议把镜盒带到店试放，留意拉链能否自然合上。",
+                    2: "晚餐只带手机钥匙，18 更轻便。如果一定要带硬壳眼镜盒，28 的常见用途包括眼镜盒，不过仍需实物确认。",
+                    3: "现在不能保证放得下。您下次带上平常用的硬壳眼镜盒过来，我当面替您把它放进去看一下。",
+                }
+                return json.dumps({"text": texts[slot]})
+
+        model = TrialModel()
+        context = self.resources.prepare(self.presets["PR-06"])
+        replies = await self.workflow.generate("PR", context, model, "test")
+        self.assertEqual(model.retried, [3])
+        self.assertEqual([reply.review_status for reply in replies], ["passed", "passed", "regenerated"])
+        self.assertIn("最厚的地方", replies[2].text)
 
     def test_precheck_distinguishes_catalog_price_from_customer_budget(self):
         self.assertEqual(precheck("目录价是 1.48 万元，可先按您的 13,000 元预算考虑。", self.context), [])
         self.assertEqual(precheck("目录价为 14,000 元。", self.context)[0]["code"], "UNSUPPORTED_FACT")
+
+    def test_care_answers_cover_each_requested_operation(self):
+        context = self.resources.prepare(GenerateInput(
+            scenario="PC", product_id="LIUXI-INTERVAL-28",
+            current_message={"text": "已经干了。叠层边有点灰，固定肩带是平放吗？"},
+        ))
+        self.assertEqual(precheck("叠层边缘用干燥软布轻拭。", context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck("肩带不用平放，叠层边缘用软布轻拭。", context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck("固定肩带自然平放，叠层边缘用干燥软布沿外缘轻拭。", context), [])
+
+    def test_uninvited_customer_cannot_be_directed_to_private_signup(self):
+        context = self.resources.prepare(GenerateInput(
+            scenario="EV", event_id="LIUXI-EVT-20261121-WINTER-PREVIEW",
+            current_message={"text": "我没收到邀请，直接拿截图去可以吗？"},
+        ), now=datetime.fromisoformat("2026-11-06T12:00:00+08:00"))
+        denial = "私享预览仅限受邀者，截图不能入场。"
+        self.assertEqual(precheck(denial + "您没收到邀请，我这边无法确认您的席位。", context), [])
+        self.assertEqual(precheck(denial + "请在截止前回复，我帮您核对席位。", context)[0]["code"],
+                         "UNVERIFIED_COMMITMENT")
+        self.assertEqual(precheck(denial + "公开陈列从11月22日开始，我可以帮您核对当天的开放时间。", context), [])
+        self.assertEqual(precheck("11月22日有公开陈列。", context)[0]["code"], "UNANSWERED")
 
     async def test_selected_scenario_reaches_all_workers_and_reviewer(self):
         class RecordingModel:
@@ -367,6 +431,55 @@ class WorkbenchApiTests(unittest.TestCase):
         self.assertEqual([(item["slot"], item["text"]) for item in options], list(DRAFTS.items()))
         self.assertEqual([item["review_status"] for item in options], ["regenerated", "passed", "passed"])
         self.assertEqual(len(model.review_payloads), 1)
+
+    def test_recovers_only_the_failed_slot_when_model_review_is_unavailable(self):
+        class FaultModel:
+            def __init__(self, fault):
+                self.fault = fault
+                self.drafts = []
+
+            async def complete(self, messages, *, max_tokens):
+                body = messages[1]["content"].split("\n", 1)[1]
+                payload, offset = json.JSONDecoder().raw_decode(body)
+                if "options" in payload:
+                    await asyncio.Event().wait()
+                slot = payload["slot"]
+                retry = bool(body[offset:].strip())
+                self.drafts.append((slot, retry))
+                if slot == 1 and not retry:
+                    if self.fault is None:
+                        await asyncio.Event().wait()
+                    else:
+                        raise self.fault("initial draft failure")
+                return json.dumps({"text": DRAFTS[slot]})
+
+        for fault in (ModelRateLimited, ModelError, None):
+            with self.subTest(fault=fault), TestClient(app) as client:
+                model = FaultModel(fault)
+                app.state.model = model
+                app.state.timeout = 0.5
+                preset = next(item for item in client.get("/api/presets").json() if item["id"] == "PO-02")
+                response = client.post("/api/generate", json=preset["input"])
+                self.assertEqual(response.status_code, 200)
+                options = response.json()["options"]
+                self.assertEqual([(item["slot"], item["text"]) for item in options], list(DRAFTS.items()))
+                self.assertEqual([item["review_status"] for item in options], ["regenerated", "local_only", "local_only"])
+                self.assertCountEqual(model.drafts, [(1, False), (2, False), (3, False), (1, True)])
+
+    def test_malformed_review_does_not_discard_the_initial_drafts(self):
+        class MalformedReview:
+            async def complete(self, messages, *, max_tokens):
+                payload = json.loads(messages[1]["content"].split("\n", 1)[1])
+                if "options" in payload:
+                    return "invalid JSON"
+                return json.dumps({"text": DRAFTS[payload["slot"]]})
+
+        with TestClient(app) as client:
+            app.state.model = MalformedReview()
+            preset = next(item for item in client.get("/api/presets").json() if item["id"] == "PO-02")
+            response = client.post("/api/generate", json=preset["input"])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["review_status"] for item in response.json()["options"]], ["local_only"] * 3)
 
     def test_free_input_routes_and_returns_prepared_basis(self):
         model = ApiModel({"scenario": "PR", "reason": "本轮咨询肩背包。", "question": None})

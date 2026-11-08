@@ -301,6 +301,7 @@ export default function App() {
                     <h3 id={`reply-title-${slot}`}>{strategyLabels?.[slot - 1] ?? `回复 ${slot}`}</h3>
                   </div>
                   {usable && reply?.review_status === 'regenerated' && <p className="hint">重生成稿 · 复制前请核对</p>}
+                  {usable && reply?.review_status === 'local_only' && <p className="hint">仅规则检查 · 复制前请核对</p>}
                   {isEditing && reply ? (
                     <textarea aria-label={`编辑第 ${slot} 条回复正文`} rows={4} value={reply.text} onChange={(event) => editReply(slot, event.target.value)} />
                   ) : (
