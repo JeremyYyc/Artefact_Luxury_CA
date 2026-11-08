@@ -7,11 +7,12 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from backend.deepseek import DeepSeek, ModelError, ModelRateLimited, Settings
 from backend.models import GenerateInput, GenerateResponse, Preset, RoutingInfo
-from backend.resources import InvalidInput, Resources
+from backend.resources import ROOT, InvalidInput, Resources
 from backend.workflow import LOGGER, ReplyWorkflow, ReviewError
 
 SERVICE_VERSION = "0.3.0"
@@ -102,3 +103,8 @@ async def generate(input_data: GenerateInput, request: Request, response: Respon
                 scenario, state.workflow.version, (perf_counter() - start) * 1000)
     return GenerateResponse(request_id=request_id, scenario=scenario, workflow_version=state.workflow.version,
                             options=options, routing=routing, basis=context)
+
+
+frontend_dist = ROOT / "frontend" / "dist"
+if (frontend_dist / "index.html").is_file():
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
