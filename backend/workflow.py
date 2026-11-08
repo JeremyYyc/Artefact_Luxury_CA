@@ -356,7 +356,7 @@ def check_group(scenario: Scenario, drafts: list[Draft], review: dict, locked: f
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = f'{pack["prompt_version"]}+fact-grounding.4'
+        self.version = f'{pack["prompt_version"]}+fact-grounding.5'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()

@@ -61,10 +61,14 @@ class ReplyGroundingTests(unittest.TestCase):
                 checks = reply_fact_checks(scenario, context)
                 self.assertTrue(grounding_issues(bad, checks))
                 self.assertEqual(grounding_issues(supported, checks), [])
+                if case_id == "PC-05":
+                    self.assertTrue(grounding_issues("同一格塞多张厚卡反而会挤压卡槽。", checks))
                 if case_id == "EV-07":
                     self.assertTrue(grounding_issues("公开陈列时两只都能看到。", checks))
                     self.assertTrue(grounding_issues("到时可以一起比较 18 和 28 的搭配。", checks))
                     self.assertTrue(grounding_issues("公开陈列里可以留意两只包在深色外套旁的包身线条。", checks))
+                    self.assertTrue(grounding_issues("可以一起去看陈列、比较 18 和 28 的搭配。", checks))
+                    self.assertTrue(grounding_issues("到时也能一起看厚外套搭配和拿取是否顺手。", checks))
                     self.assertEqual(grounding_issues("您想比较 18 和 28，具体展出款式我可以先核对。", checks), [])
                 if case_id == "PO-04":
                     self.assertTrue(grounding_issues("6,800 元是目录价，差别在用料和结构。", checks))
