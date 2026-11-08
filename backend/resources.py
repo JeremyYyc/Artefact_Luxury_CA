@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -15,11 +16,13 @@ PRODUCT_FIELDS: dict[Scenario, tuple[str, ...]] = {
     "PC": ("care_manual",),
     "RE": ("use_cases_and_features",),
     "EV": ("care_manual",),
-    "PO": ("price",),
+    "PO": ("price", "weight", "size_and_capacity", "use_cases_and_features", "materials_and_craft"),
 }
 EVENT_FIELDS = ("event_id", "name", "starts_at", "ends_at", "venue", "highlights", "public_milestone")
 CARE_FIELDS = ("version", "applicable_product_ids", "applicable_materials", "applicable_parts",
                "care_topics", "avoid", "contact_advisor_when")
+STOCK_REQUEST = re.compile(r"现货|库存|有货|没货|缺货|断货|补货|到货|还有吗|(?:有|能买到)吗$")
+COMPANION_REQUEST = re.compile(r"携伴|同行|带.{0,8}(?:来|去|参加|入场|吗)|(?:一起|一块).{0,8}(?:去|来|参加|看|入场|进)")
 
 
 class InvalidInput(ValueError):
@@ -42,6 +45,36 @@ def invite_state(event: dict, now: datetime) -> str:
     return "open" if rsvp.get("status") == "open" else "unknown"
 
 
+def stock_snapshot(request: GenerateInput, products: list[dict], now: datetime) -> dict | None:
+    if not products or not request.current_message:
+        return None
+    clauses = [clause for clause in re.split(r"[，。！？；,!?;]", request.current_message.text)
+               if STOCK_REQUEST.search(clause.strip())]
+    if not clauses:
+        return None
+    product = products[0]
+    for item in products:
+        short_name = item["name"].split(" ")[:2]
+        if len(short_name) == 2 and any(item["name"] in clause or " ".join(short_name) in clause
+                                       or (short_name[1].isdigit() and re.search(rf"(?<!\d){short_name[1]}(?!\d)", clause))
+                                       for clause in clauses):
+            product = item
+            break
+    options = product["color_options"]
+    colors = [item["color"] for item in options if any(item["color"] in clause for clause in clauses)]
+    if not colors and product is products[0] and request.color:
+        colors = [request.color]
+    inventory = product.get("inventory", {})
+    as_of = inventory.get("as_of_date")
+    if not as_of or as_of > now.astimezone(SHANGHAI).date().isoformat() or not inventory.get("location"):
+        return None
+    return {
+        "product_id": product["product_id"], "name": product["name"],
+        "as_of_date": as_of, "location": inventory["location"],
+        "colors": [item for item in options if not colors or item["color"] in colors],
+    }
+
+
 class Resources:
     def __init__(self):
         data = ROOT / "data"
@@ -53,7 +86,7 @@ class Resources:
         self.brand = catalog["brand"]
         self.products = {item["product_id"]: item for item in catalog["products"]}
         self.events = {item["event_id"]: item for item in events["events"]}
-        self.prompts = json.loads((ROOT / "backend/prompts/liuxi_v1.json").read_text(encoding="utf-8"))
+        self.prompts = json.loads((ROOT / "backend/prompts/liuxi_v3.json").read_text(encoding="utf-8"))
         definitions = TypeAdapter(list[PresetDefinition]).validate_json((data / "presets.json").read_bytes())
         self.presets = []
         for preset in definitions:
@@ -93,13 +126,13 @@ class Resources:
         products = [self.products[product_id] for product_id in ids]
         if request.scenario in ("PR", "PC", "PO") and not products:
             raise InvalidInput("请先选择要讨论的商品。")
-        if request.scenario == "PO" and not request.color:
-            raise InvalidInput("请先确认商品颜色。")
         if request.color and (not products or request.color not in {item["color"] for item in products[0]["color_options"]}):
             raise InvalidInput("所选颜色不在商品目录中，请核对后重试。")
         event = self.events.get(request.event_id)
         if event is None and (request.event_id or request.scenario == "EV"):
             raise InvalidInput("请先选择要讨论的活动场次。")
+        if any(event_id not in self.events for event_id in request.related_event_ids):
+            raise InvalidInput("关联的其他活动场次不存在。")
         return client, products, event
 
     def prepare(self, request: GenerateInput, *, scenario: Scenario | None = None, now: datetime | None = None) -> dict:
@@ -119,14 +152,23 @@ class Resources:
         for product in products:
             fields = ("product_id", "name", *PRODUCT_FIELDS[scenario])
             selected = {field: product[field] for field in fields if field in product}
+            if scenario in ("PR", "PO"):
+                selected["available_colors"] = [item["color"] for item in product["color_options"]]
             if "care_manual" in selected:
                 manual = selected["care_manual"]
                 selected["care_manual"] = {field: manual[field] for field in CARE_FIELDS if field in manual}
             selected_products.append(selected)
         if request.color:
             selected_products[0]["selected_color"] = request.color
+        snapshot = stock_snapshot(request, products, now) if scenario in ("PR", "PO") else None
+        if snapshot:
+            for selected in selected_products:
+                if selected["product_id"] == snapshot["product_id"]:
+                    selected["inventory_snapshot"] = snapshot
 
         selected_events = []
+        verified_facts = []
+        companion_prohibited = False
         if event and scenario == "EV":
             state = invite_state(event, now)
             rsvp = event.get("rsvp", {})
@@ -134,11 +176,25 @@ class Resources:
                 if state != "open" or not event.get("venue"):
                     raise InvalidInput("该场次当前不可报名，请核实或更换活动后再发出邀约。")
                 if rsvp.get("access") == "invite_only":
-                    raise InvalidInput("请先核实私享活动的拟邀约资格。")
-            selected = {field: event[field] for field in EVENT_FIELDS if field in event}
-            selected["invite_state"] = state
-            selected["rsvp"] = {key: value for key, value in rsvp.items() if key not in ("status", "capacity")}
-            selected_events.append(selected)
+                    confirmed = request.confirmed_invitation
+                    if not confirmed or confirmed.event_id != request.event_id or confirmed.client_id != request.client_id:
+                        raise InvalidInput("请先核实私享活动的拟邀约资格。")
+                    verified_facts.append({
+                        "topic": "私享场拟邀约对象", "applies_to": request.event_id,
+                        "value": {"client_id": confirmed.client_id, "scope": "仅限本人，席位仍需确认"},
+                        "source": "顾问确认",
+                    })
+            companion_prohibited = bool(request.current_message and rsvp.get("max_guests_per_invitee") == 0
+                                        and COMPANION_REQUEST.search(request.current_message.text))
+            for event_id in dict.fromkeys([request.event_id, *request.related_event_ids]):
+                source = self.events[event_id]
+                selected = {field: source[field] for field in EVENT_FIELDS if field in source}
+                selected["invite_state"] = invite_state(source, now)
+                selected["rsvp"] = {key: value for key, value in source.get("rsvp", {}).items()
+                                    if key not in ("status", "capacity")}
+                if selected.get("public_milestone", {}).get("type") == "boutique_display_opening":
+                    selected["public_milestone"] = {**selected["public_milestone"], "meaning": "店内陈列正式对公众开放"}
+                selected_events.append(selected)
 
         to_confirm = []
         if scenario in ("PR", "PC", "PO") and not selected_products:
@@ -171,7 +227,8 @@ class Resources:
             "outreach": request.outreach.model_dump(mode="json") if request.outreach else None,
             "products": selected_products,
             "events": selected_events,
-            "verified_facts": [],
+            "verified_facts": verified_facts,
             "to_confirm": to_confirm,
-            "allow_inventory_snapshot": False,
+            "allow_inventory_snapshot": snapshot is not None,
+            "companion_prohibited": companion_prohibited,
         }

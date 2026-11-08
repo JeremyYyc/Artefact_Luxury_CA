@@ -96,7 +96,7 @@ async def generate(input_data: GenerateInput, request: Request, response: Respon
         raise HTTPException(504, "生成超时，已保留输入，请重试。", headers=NO_STORE) from None
     except (ModelError, ReviewError) as error:
         LOGGER.warning("generate request_id=%s status=502 error=%s", request_id, error)
-        raise HTTPException(502, "未能生成三条通过校验的回复，请重试。", headers=NO_STORE) from None
+        raise HTTPException(502, "未能生成完整的三条回复，请重试。", headers=NO_STORE) from None
     LOGGER.info("generate request_id=%s scenario=%s workflow=%s status=200 ms=%d", request_id,
                 scenario, state.workflow.version, (perf_counter() - start) * 1000)
     return GenerateResponse(request_id=request_id, scenario=scenario, workflow_version=state.workflow.version,

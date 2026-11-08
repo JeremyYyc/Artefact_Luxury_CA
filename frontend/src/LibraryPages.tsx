@@ -21,10 +21,14 @@ export type LibraryPage = keyof typeof libraryPages;
 
 export function ProductDetails({ product }: { product: ProductFacts }) {
   const dimensions = product.size_and_capacity?.external_dimensions_cm;
+  const inventory = product.inventory_snapshot;
   return (
     <>
       <dl className="detail-grid">
         {product.selected_color && <div><dt>选定颜色</dt><dd>{product.selected_color}</dd></div>}
+        {inventory && <div><dt>{inventory.as_of_date} · {inventory.location}库存</dt><dd>
+          {inventory.colors.map(({ color, stock_quantity }) => `${color} ${stock_quantity} 件`).join('、')}。现货需核实。
+        </dd></div>}
         {product.price && <div><dt>目录价</dt><dd>¥{priceFormat.format(product.price.amount)}</dd></div>}
         {dimensions && <div><dt>外部尺寸</dt><dd>{dimensions.width} × {dimensions.height} × {dimensions.depth} cm</dd></div>}
         {product.weight && <div><dt>重量</dt><dd>{product.weight.grams} g（{product.weight.measurement_basis}）</dd></div>}
@@ -55,7 +59,10 @@ export function EventDetails({ event }: { event: EventFacts }) {
       <span className="tag">{eventStates[event.invite_state]}</span>
       <h3>{event.name}</h3>
       <p>{formatShanghaiTime(event.starts_at)} 至 {clockTime.format(new Date(event.ends_at))} · {venue.name} · {venue.area}</p>
-      <p>{rsvp.access === 'invite_only' ? '仅限受邀本人' : '需要预约'}{rsvp.max_guests_per_invitee ? ` · 可携伴 ${rsvp.max_guests_per_invitee} 人` : ''}</p>
+      <p>{rsvp.access === 'invite_only' ? '仅限受邀顾客' : '需要预约'}
+        {rsvp.max_guests_per_invitee === 0 && ' · 不可携伴'}
+        {!!rsvp.max_guests_per_invitee && ` · 可携伴 ${rsvp.max_guests_per_invitee} 人`}
+      </p>
       {rsvp.deadline_at && <p>报名截止 {formatShanghaiTime(rsvp.deadline_at)} · {rsvp.channel}</p>}
       {event.public_milestone && <p>{event.public_milestone.type === 'product_launch' ? '商品上市' : '陈列正式开放'} · {event.public_milestone.date}</p>}
     </div>

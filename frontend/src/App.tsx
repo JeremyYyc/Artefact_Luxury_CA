@@ -287,7 +287,7 @@ export default function App() {
           <div className="results-heading">
             <h2 id="results-title"><span className="section-number">02</span> 候选回复</h2>
             {usable && result?.routing.mode === 'automatic' && <span className="tag">识别为 {scenarioLabels[result.scenario]}</span>}
-            {result && <span className="tag" role="status">{usable ? '3 条已通过校验（生成稿）' : '待重新生成'}</span>}
+            {result && <span className="tag" role="status">{usable ? '3 条已生成' : '待重新生成'}</span>}
           </div>
           <p className="hint">比较表达重点，复制到微信前可先修改。</p>
           <div className="cards">
@@ -300,6 +300,7 @@ export default function App() {
                     <span className="slot-letter" aria-hidden="true">{'ABC'[slot - 1]}</span>
                     <h3 id={`reply-title-${slot}`}>{strategyLabels?.[slot - 1] ?? `回复 ${slot}`}</h3>
                   </div>
+                  {usable && reply?.review_status === 'regenerated' && <p className="hint">重生成稿 · 复制前请核对</p>}
                   {isEditing && reply ? (
                     <textarea aria-label={`编辑第 ${slot} 条回复正文`} rows={4} value={reply.text} onChange={(event) => editReply(slot, event.target.value)} />
                   ) : (

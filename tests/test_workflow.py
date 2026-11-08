@@ -2,24 +2,32 @@ import asyncio
 import json
 import unittest
 from datetime import datetime
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
 from app import app
+from backend.models import GenerateInput
 from backend.resources import InvalidInput, Resources, invite_state
-from backend.workflow import ReplyWorkflow, ReviewError, precheck
+from backend.workflow import ReplyWorkflow, ReviewError, WorkflowRuntime, contract_issues, generation_mode, precheck
 
 DRAFTS = {
     1: "沈女士，墨黑 18 的目录价是 14,800 元，九折现在还不能确认。",
     2: "沈女士，九折我现在还不能确认。我可以帮您核实这款是否有适用的优惠。",
     3: "沈女士，九折目前还不能确认。如果这是您的预算线，可以先放一放。",
 }
+ACTIONS = {1: "说明目录价", 2: "核实适用优惠", 3: "按预算暂缓"}
+
+
+def reviewed_slot(slot, issues=(), *, action="说明当前信息"):
+    return {"slot": slot, "status": "fail" if issues else "pass", "issues": list(issues), "primary_action": action}
 
 
 class StubModel:
-    def __init__(self, *, persist_failure=False, ignore_precheck=False):
+    def __init__(self, *, persist_failure=False, ignore_precheck=False, blank_retry=False):
         self.persist_failure = persist_failure
         self.ignore_precheck = ignore_precheck
+        self.blank_retry = blank_retry
         self.initial_slots = []
         self.retried_slots = []
         self.review_payloads = []
@@ -37,7 +45,7 @@ class StubModel:
             }
             return json.dumps({
                 "slot_results": [
-                    {"slot": slot, "status": "fail" if issues else "pass", "issues": issues}
+                    reviewed_slot(slot, issues, action=ACTIONS[slot])
                     for slot, issues in issues_by_slot.items()
                 ],
                 "rerun_slots": [slot for slot, issues in issues_by_slot.items() if issues],
@@ -48,6 +56,8 @@ class StubModel:
         if retry:
             self.retried_slots.append(slot)
             self.feedback = json.loads(body[offset:].strip().split("\n", 1)[1])
+            if self.blank_retry:
+                return json.dumps({"text": " "})
         else:
             self.initial_slots.append(slot)
             if len(self.initial_slots) == 3:
@@ -72,22 +82,34 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         replies = await self.workflow.generate("PO", self.context, model, "test")
         self.assertCountEqual(model.initial_slots, [1, 2, 3])
         self.assertEqual(model.retried_slots, [1])
-        self.assertEqual(model.review_payloads[1]["locked_slots"], [2, 3])
+        self.assertEqual(len(model.review_payloads), 1)
         self.assertEqual([item["text"] for item in model.feedback["passed_replies"]], [DRAFTS[2], DRAFTS[3]])
+        self.assertEqual(model.feedback["occupied_actions"], [
+            {"slot": 2, "action": ACTIONS[2]}, {"slot": 3, "action": ACTIONS[3]},
+        ])
         self.assertEqual([(reply.slot, reply.text) for reply in replies], list(DRAFTS.items()))
+        self.assertEqual([reply.review_status for reply in replies], ["regenerated", "passed", "passed"])
 
-    async def test_does_not_return_partial_replies_after_retry(self):
-        model = StubModel(persist_failure=True)
-        with self.assertRaises(ReviewError):
+    async def test_does_not_return_partial_replies_when_retry_has_no_text(self):
+        model = StubModel(blank_retry=True)
+        with self.assertRaisesRegex(ReviewError, "three nonempty replies"):
             await self.workflow.generate("PO", self.context, model, "test")
         self.assertEqual(model.retried_slots, [1])
-        self.assertEqual(len(model.review_payloads), 2)
+        self.assertEqual(len(model.review_payloads), 1)
 
-    async def test_reviewer_cannot_override_precheck_failure(self):
+    async def test_precheck_retries_even_if_reviewer_passes_a_rejected_draft(self):
         model = StubModel(ignore_precheck=True)
-        with self.assertRaisesRegex(ReviewError, "passed a precheck failure"):
-            await self.workflow.generate("PO", self.context, model, "test")
-        self.assertEqual(model.retried_slots, [])
+        replies = await self.workflow.generate("PO", self.context, model, "test")
+        self.assertEqual(model.retried_slots, [1])
+        self.assertEqual(replies[0].text, DRAFTS[1])
+
+    async def test_regenerated_reply_is_not_subject_to_a_second_content_check(self):
+        model = StubModel(ignore_precheck=True, persist_failure=True)
+        replies = await self.workflow.generate("PO", self.context, model, "test")
+        self.assertEqual(model.retried_slots, [1])
+        self.assertEqual(len(model.review_payloads), 1)
+        self.assertTrue(precheck(replies[0].text, self.context))
+        self.assertEqual(replies[0].review_status, "regenerated")
 
     def test_precheck_distinguishes_catalog_price_from_customer_budget(self):
         self.assertEqual(precheck("目录价是 1.48 万元，可先按您的 13,000 元预算考虑。", self.context), [])
@@ -105,7 +127,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
                     prefix = "先别给拉链加油。" if payload["scenario"] == "PC" else ""
                     return json.dumps({"text": f"{prefix}第 {payload['slot']} 条草稿"})
                 return json.dumps({
-                    "slot_results": [{"slot": slot, "status": "pass", "issues": []} for slot in (1, 2, 3)],
+                    "slot_results": [reviewed_slot(slot) for slot in (1, 2, 3)],
                     "rerun_slots": [],
                 })
 
@@ -126,6 +148,162 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(context["advisor_goal"])
             self.assertTrue(context["history"])
         self.assertEqual(self.resources.prepare(self.presets["RE-03"])["products"], [])
+
+    async def test_reactivation_ignores_historical_care_omissions_but_retries_duplicates(self):
+        class ReactivationModel:
+            async def complete(self, messages, *, max_tokens):
+                payload, offset = json.JSONDecoder().raw_decode(messages[1]["content"].split("\n", 1)[1])
+                if "options" not in payload:
+                    texts = [
+                        "闻女士，许久没联系，祝您近来一切顺心。",
+                        "闻女士，您之前提过长夹拉链快拉到底时有点紧，后来用着还顺手吗？",
+                        "闻女士，哪天顺路，您可以带长夹来给我看看，按您的时间就好。",
+                    ]
+                    feedback = messages[1]["content"].split("\n", 1)[1][offset:]
+                    if feedback:
+                        self.retry = payload["slot"]
+                        return json.dumps({"text": texts[2]})
+                    return json.dumps({"text": texts[min(payload["slot"], 2) - 1]})
+                issue = {"code": "UNSAFE_CARE", "reason": "未提醒不要加油和停手", "fix": "补护理禁忌",
+                         "quote": None, "related_slot": None}
+                return json.dumps({
+                    "slot_results": [reviewed_slot(slot, [issue]) for slot in (1, 2, 3)],
+                    "rerun_slots": [1, 2, 3],
+                })
+
+        model = ReactivationModel()
+        context = self.resources.prepare(self.presets["RE-03"])
+        replies = await self.workflow.generate("RE", context, model, "test")
+        self.assertEqual(model.retry, 3)
+        self.assertEqual(len({reply.text for reply in replies}), 3)
+
+    def test_private_companion_rule_requires_clear_denial_and_public_date(self):
+        request = GenerateInput(
+            scenario="EV", event_id="LIUXI-EVT-20261121-WINTER-PREVIEW",
+            related_event_ids=["LIUXI-EVT-20261017-TRACE-PREVIEW"],
+            current_message={"text": "姐姐想给我参谋一下。我们能一起去预览吗？"},
+        )
+        now = datetime.fromisoformat("2026-11-06T12:00:00+08:00")
+        context = self.resources.prepare(request, now=now)
+        self.assertEqual([event["invite_state"] for event in context["events"]], ["open", "ended"])
+        self.assertEqual(precheck("我帮您问一下姐姐能否同行。", context)[0]["code"], "UNSUPPORTED_FACT")
+        self.assertEqual(precheck("私享场仅限受邀本人。", context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck("私享场仅限受邀本人，不能携伴。11 月 22 日起公开陈列，可一起去看。", context), [])
+        self.assertEqual(precheck(
+            "私享场不能携伴，但我可以帮您确认能否带姐姐。11月22日起公开陈列。", context,
+        )[0]["code"], "UNSUPPORTED_FACT")
+
+    async def test_public_companion_guidance_only_reaches_matching_request(self):
+        class DraftModel:
+            async def complete(self, messages, *, max_tokens):
+                self.prompt = messages[0]["content"]
+                return json.dumps({"text": "不能携伴。11月22日起公开陈列。"})
+
+        now = datetime.fromisoformat("2026-11-06T12:00:00+08:00")
+        private = GenerateInput(
+            scenario="EV", event_id="LIUXI-EVT-20261121-WINTER-PREVIEW",
+            current_message={"text": "姐姐想一起去预览，可以带她去吗？"},
+        )
+        regular = private.model_copy(update={"event_id": self.presets["EV-03"].event_id})
+        model = DraftModel()
+        runtime = SimpleNamespace(context=WorkflowRuntime(model, "test"))
+        for request, expected in ((private, True), (regular, False)):
+            await self.workflow.draft_reply(
+                {"scenario": "EV", "context": self.resources.prepare(request, now=now), "slot": 3}, runtime,
+            )
+            self.assertEqual("以这条专用分路为准" in model.prompt, expected)
+
+    async def test_invitation_experience_is_retried_instead_of_locked(self):
+        class InvitationModel:
+            def __init__(self):
+                self.generation_contexts = {}
+
+            async def complete(self, messages, *, max_tokens):
+                body = messages[1]["content"].split("\n", 1)[1]
+                payload, offset = json.JSONDecoder().raw_decode(body)
+                if "options" in payload:
+                    self.review_calls = getattr(self, "review_calls", 0) + 1
+                    return json.dumps({"slot_results": [reviewed_slot(slot) for slot in (1, 2, 3)],
+                                       "rerun_slots": []})
+                slot = payload["slot"]
+                self.generation_contexts[slot] = payload["context"]
+                texts = {
+                    1: "11月14日护理小课在上海精品店举行，报名截止后由顾问核对席位。",
+                    2: "您之前关心的肩带收纳，这次护理小课会有相关演示。",
+                    3: "如果想参加，可以在截止前微信回复，我收到后会再核对席位。",
+                }
+                text = texts[slot]
+                if slot == 1 and not body[offset:].strip():
+                    text += "现场会演示肩带收纳。"
+                return json.dumps({"text": text})
+
+        request = GenerateInput(
+            scenario="EV", event_id=self.presets["EV-03"].event_id, advisor_goal="邀请顾客参加护理课。",
+        )
+        context = self.resources.prepare(request, now=datetime.fromisoformat("2026-11-06T12:00:00+08:00"))
+        model = InvitationModel()
+        replies = await self.workflow.generate("EV", context, model, "test")
+        self.assertEqual(model.review_calls, 1)
+        self.assertEqual([reply.review_status for reply in replies], ["regenerated", "passed", "passed"])
+        self.assertNotIn("演示", replies[0].text)
+        self.assertNotIn("highlights", model.generation_contexts[1]["events"][0])
+        self.assertIn("highlights", model.generation_contexts[2]["events"][0])
+        self.assertIn("highlights", context["events"][0])
+
+    def test_pure_greeting_and_picking_prechecks_allow_the_scoped_fallbacks(self):
+        greeting = {"current_message": None, "advisor_goal": "这次只问候。", "products": [], "events": []}
+        greeting_mode = generation_mode("RE", greeting)
+        self.assertEqual(greeting_mode, "pure_greeting")
+        self.assertEqual(contract_issues("想起您，来打个招呼。", "RE", 3, greeting_mode, greeting), [])
+        self.assertEqual(contract_issues("最近有顺路来过吗？", "RE", 2, greeting_mode, greeting)[0]["code"],
+                         "STRATEGY_MISMATCH")
+        picking = {"current_message": {"text": "我还没数过平时带什么，能先给个挑法吗？"}, "products": []}
+        mode = generation_mode("PR", picking)
+        self.assertEqual(mode, "product_picking")
+        self.assertEqual(contract_issues("方便时量一下物品厚度。", "PR", 3, mode, picking)[0]["code"],
+                         "STRATEGY_MISMATCH")
+        self.assertEqual(contract_issues("先选一个最想改善的用包动作。", "PR", 3, mode, picking), [])
+        self.assertIsNone(generation_mode("PR", {
+            **picking, "current_message": {"text": "这两款怎么挑，硬封本的厚度要量吗？"},
+        }))
+
+    def test_hardcover_fit_requires_a_verified_fit_rather_than_cavity_dimensions(self):
+        context = {"products": [{"size_and_capacity": {"measurement_basis": "主仓可用空间"}}]}
+        self.assertEqual(contract_issues("硬皮本、会议纸和一支笔能一起放。", "PO", 2, None, context)[0]["code"],
+                         "UNSUPPORTED_FACT")
+        self.assertEqual(contract_issues("主仓约22.5×16×2厘米，硬皮本能否和纸笔一起放仍需试放。",
+                                         "PO", 2, None, context), [])
+
+    def test_private_invitation_confirmation_is_bound_to_client_and_event(self):
+        request = GenerateInput(scenario="EV", client_id=self.presets["PO-02"].client_id,
+                                event_id="LIUXI-EVT-20261121-WINTER-PREVIEW", advisor_goal="邀约客户本人")
+        now = datetime.fromisoformat("2026-11-06T12:00:00+08:00")
+        with self.assertRaisesRegex(InvalidInput, "核实私享活动"):
+            self.resources.prepare(request, now=now)
+        wrong = request.model_copy(update={"client_id": self.presets["EV-03"].client_id})
+        payload = request.model_dump()
+        payload["confirmed_invitation"] = {"client_id": request.client_id, "event_id": request.event_id}
+        valid = GenerateInput.model_validate(payload)
+        self.assertIn("席位仍需确认", self.resources.prepare(valid, now=now)["verified_facts"][0]["value"]["scope"])
+        with self.assertRaisesRegex(InvalidInput, "核实私享活动"):
+            self.resources.prepare(valid.model_copy(update={"client_id": wrong.client_id}), now=now)
+
+    def test_stock_answer_distinguishes_snapshot_from_live_stock_and_discount(self):
+        request = GenerateInput(
+            scenario="PO", product_ids=["LIUXI-INTERVAL-18"], color="栗棕",
+            current_message={"text": "岩灰没货的话，栗棕能便宜一点吗？"},
+        )
+        now = datetime.fromisoformat("2026-11-06T12:00:00+08:00")
+        context = self.resources.prepare(request, now=now)
+        snapshot = context["products"][0]["inventory_snapshot"]
+        self.assertEqual(snapshot["colors"], [{"color": "岩灰", "stock_quantity": 0}])
+        base = "11月6日上海精品店库存记录，岩灰为 0 件。"
+        discount = "栗棕的优惠目前无法确认。"
+        self.assertEqual(precheck(base + discount, context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck(base + discount + "栗棕现货仍需核实。", context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck(base + "岩灰现货仍需核实。" + discount, context), [])
+        before_snapshot = datetime.fromisoformat("2026-11-05T12:00:00+08:00")
+        self.assertNotIn("inventory_snapshot", self.resources.prepare(request, now=before_snapshot)["products"][0])
 
     def test_care_uses_the_selected_products_manual(self):
         products = self.resources.prepare(self.presets["PC-07"])["products"]
@@ -171,13 +349,25 @@ class ApiModel:
             return json.dumps({"text": f"第 {payload['slot']} 条草稿"})
         if "options" in payload:
             return json.dumps({
-                "slot_results": [{"slot": slot, "status": "pass", "issues": []} for slot in (1, 2, 3)],
+                "slot_results": [reviewed_slot(slot) for slot in (1, 2, 3)],
                 "rerun_slots": [],
             })
         return json.dumps(self.decision)
 
 
 class WorkbenchApiTests(unittest.TestCase):
+    def test_generate_returns_three_replies_with_the_regenerated_slot_marked(self):
+        model = StubModel()
+        with TestClient(app) as client:
+            app.state.model = model
+            preset = next(item for item in client.get("/api/presets").json() if item["id"] == "PO-02")
+            response = client.post("/api/generate", json=preset["input"])
+        self.assertEqual(response.status_code, 200)
+        options = response.json()["options"]
+        self.assertEqual([(item["slot"], item["text"]) for item in options], list(DRAFTS.items()))
+        self.assertEqual([item["review_status"] for item in options], ["regenerated", "passed", "passed"])
+        self.assertEqual(len(model.review_payloads), 1)
+
     def test_free_input_routes_and_returns_prepared_basis(self):
         model = ApiModel({"scenario": "PR", "reason": "本轮咨询肩背包。", "question": None})
         with TestClient(app) as client:
@@ -235,6 +425,7 @@ class WorkbenchApiTests(unittest.TestCase):
             presets = client.get("/api/presets").json()
             self.assertEqual(len(presets), 6)
             payload = next(item["input"] for item in presets if item["id"] == "PO-02")
+            payload.pop("color")
             response = client.post("/api/generate", json=payload)
             library = client.get("/api/library").json()
         self.assertEqual(response.status_code, 200)

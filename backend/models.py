@@ -27,6 +27,11 @@ class Outreach(InputModel):
     send_on: date | None = None
 
 
+class InvitationConfirmation(InputModel):
+    event_id: CatalogId
+    client_id: CatalogId
+
+
 class GenerateInput(InputModel):
     scenario: Scenario | None = None
     client_id: CatalogId | None = None
@@ -35,6 +40,8 @@ class GenerateInput(InputModel):
     product_ids: list[CatalogId] = Field(default_factory=list, max_length=3)
     color: str | None = Field(default=None, min_length=1, max_length=30)
     event_id: CatalogId | None = None
+    related_event_ids: list[CatalogId] = Field(default_factory=list, max_length=3)
+    confirmed_invitation: InvitationConfirmation | None = None
     advisor_goal: MessageText | None = None
     outreach: Outreach | None = None
     history: list[HistoryMessage] = Field(default_factory=list, max_length=12)
@@ -66,6 +73,7 @@ class Reply(BaseModel):
     slot: Slot
     strategy: str
     text: str
+    review_status: Literal["passed", "regenerated"] = "passed"
 
 
 class RoutingDecision(BaseModel):

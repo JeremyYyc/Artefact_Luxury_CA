@@ -9,6 +9,8 @@ function selectedProducts(input: Input, library: Library) {
 
 export function FreeInputFields({ input, library, changeInput }: { input: Input; library: Library; changeInput: (input: Input) => void }) {
   const products = selectedProducts(input, library);
+  const primaryEvent = library.events.find(({ event_id }) => event_id === input.event_id);
+  const invitee = input.client_id;
   return (
     <>
       <div className="free-grid">
@@ -17,7 +19,7 @@ export function FreeInputFields({ input, library, changeInput }: { input: Input;
           <select value={input.current_message ? 'reply' : 'outreach'} onChange={(event) => {
             const text = input.current_message?.text ?? input.advisor_goal ?? '';
             changeInput(event.target.value === 'reply'
-              ? { ...input, current_message: { text, at: null }, advisor_goal: null, outreach: null }
+              ? { ...input, current_message: { text, at: null }, advisor_goal: null, outreach: null, confirmed_invitation: null }
               : { ...input, current_message: null, advisor_goal: text });
           }}>
             <option value="reply">回复顾客</option>
@@ -26,7 +28,7 @@ export function FreeInputFields({ input, library, changeInput }: { input: Input;
         </label>
         <label className="field">
           关联客户（选填）
-          <select value={input.client_id ?? ''} onChange={(event) => changeInput({ ...input, client_id: event.target.value || null })}>
+          <select value={input.client_id ?? ''} onChange={(event) => changeInput({ ...input, client_id: event.target.value || null, confirmed_invitation: null })}>
             <option value="">未选择客户</option>
             {library.clients.map(({ client_id, full_name }) => <option value={client_id} key={client_id}>{full_name}</option>)}
           </select>
@@ -44,12 +46,35 @@ export function FreeInputFields({ input, library, changeInput }: { input: Input;
         </label>
         <label className="field">
           关联活动（选填）
-          <select value={input.event_id ?? ''} onChange={(event) => changeInput({ ...input, event_id: event.target.value || null })}>
+          <select value={input.event_id ?? ''} onChange={(event) => {
+            const eventId = event.target.value || null;
+            changeInput({ ...input, event_id: eventId, related_event_ids: eventId
+              ? input.related_event_ids?.filter((id) => id !== eventId) : [], confirmed_invitation: null });
+          }}>
             <option value="">未选择活动</option>
             {library.events.map(({ event_id, name }) => <option value={event_id} key={event_id}>{name}</option>)}
           </select>
         </label>
+        {primaryEvent && <label className="field">
+          补充活动参考（选填）
+          <select value={input.related_event_ids?.[0] ?? ''} onChange={(event) => changeInput({
+            ...input, related_event_ids: event.target.value ? [event.target.value] : [],
+          })}>
+            <option value="">未选择参考活动</option>
+            {library.events.filter(({ event_id }) => event_id !== primaryEvent.event_id).map(({ event_id, name }) => (
+              <option value={event_id} key={event_id}>{name}</option>
+            ))}
+          </select>
+        </label>}
       </div>
+      {primaryEvent?.rsvp.access === 'invite_only' && invitee && !input.current_message && (
+        <label className="selection-row">
+          <input type="checkbox" checked={Boolean(input.confirmed_invitation)} onChange={(event) => changeInput({
+            ...input, confirmed_invitation: event.target.checked ? { event_id: primaryEvent.event_id, client_id: invitee } : null,
+          })} />
+          已核实该客户本人可受邀
+        </label>
+      )}
       {products.length > 0 && (
         <div className="selection-row">
           {products.map(({ product_id, name }, index) => (
@@ -58,7 +83,7 @@ export function FreeInputFields({ input, library, changeInput }: { input: Input;
             })}>{name} ×</button>
           ))}
           <label className="field color-field">
-            首件商品颜色
+            首件商品颜色（选填）
             <select value={input.color ?? ''} onChange={(event) => changeInput({ ...input, color: event.target.value || null })}>
               <option value="">未指定</option>
               {products[0].color_options.map(({ color }) => <option value={color} key={color}>{color}</option>)}
@@ -83,7 +108,12 @@ export function GenerationBasis({ input, library, result }: { input: Input; libr
   const history = basis?.history ?? input.history.filter(({ text }) => text.trim());
   const background = basis ? basis.client_background : input.client_background;
   const outreach = basis ? basis.outreach : input.outreach;
-  const event = library.events.find(({ event_id }) => event_id === input.event_id);
+  const invitation = basis
+    ? basis.verified_facts?.find(({ topic }) => topic === '私享场拟邀约对象')?.value.scope
+    : input.confirmed_invitation && '仅限本人，席位仍需确认';
+  const events = [input.event_id, ...(input.related_event_ids ?? [])]
+    .map((id) => library.events.find(({ event_id }) => event_id === id))
+    .filter((event) => event !== undefined);
   return (
     <details className="basis">
       <summary>查看生成依据</summary>
@@ -97,6 +127,7 @@ export function GenerationBasis({ input, library, result }: { input: Input; libr
         {message?.text.trim() && <div><dt>本轮顾客消息</dt><dd>{message.text}</dd></div>}
         {goal?.trim() && <div><dt>顾问任务</dt><dd>{goal}</dd></div>}
         {outreach && <div><dt>问候安排</dt><dd>{outreach.occasion}{outreach.send_on ? ` · ${outreach.send_on}` : ''}</dd></div>}
+        {invitation && <div><dt>私享活动资格</dt><dd>顾问已核实 · {invitation}</dd></div>}
       </dl>
       {history.length > 0 && <>
         <h3>历史对话</h3>
@@ -108,7 +139,7 @@ export function GenerationBasis({ input, library, result }: { input: Input; libr
           <ProductDetails product={product} />
         </section>
       ))}
-      {(basis?.events ?? (event ? [event] : [])).map((item) => <EventDetails event={item} key={item.event_id} />)}
+      {(basis?.events ?? events).map((item) => <EventDetails event={item} key={item.event_id} />)}
       {basis?.to_confirm.length ? <>
         <h3>待核实事项</h3>
         <ul className="basis-history">{basis.to_confirm.map(({ topic, note }) => <li key={topic}><strong>{topic}</strong> · {note}</li>)}</ul>

@@ -19,6 +19,8 @@ export type Input = {
   product_ids: string[];
   color: string | null;
   event_id: string | null;
+  related_event_ids?: string[];
+  confirmed_invitation?: { event_id: string; client_id: string } | null;
   advisor_goal: string | null;
   outreach: Outreach | null;
   history: HistoryMessage[];
@@ -42,6 +44,8 @@ export type ProductFacts = {
   product_id: string;
   name: string;
   selected_color?: string;
+  available_colors?: string[];
+  inventory_snapshot?: { as_of_date: string; location: string; colors: { color: string; stock_quantity: number }[] };
   price?: Price;
   weight?: { grams: number; measurement_basis: string };
   size_and_capacity?: {
@@ -95,7 +99,7 @@ export type Library = {
 };
 
 export type Slot = 1 | 2 | 3;
-export type Reply = { slot: Slot; strategy: string; text: string };
+export type Reply = { slot: Slot; strategy: string; text: string; review_status?: 'passed' | 'regenerated' };
 export type GenerateResponse = {
   request_id: string;
   scenario: Scenario;
@@ -111,6 +115,7 @@ export type GenerateResponse = {
     outreach: Outreach | null;
     products: ProductFacts[];
     events: EventFacts[];
+    verified_facts?: { topic: string; source: string; value: { scope: string } }[];
     to_confirm: { topic: string; owner: string; note: string }[];
   };
 };

@@ -60,6 +60,7 @@ summary { cursor: pointer; color: var(--green); }
 .history-entry { margin: 10px 0; }
 .history-actions select { width: auto; }
 textarea, select, input { background: #fbfbf7; color: inherit; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; width: 100%; font-weight: 400; }
+input[type="checkbox"] { width: auto; }
 textarea { resize: vertical; line-height: 1.55; }
 .submit-row, .card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
 button { background: var(--paper); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: .82rem; color: inherit; }
