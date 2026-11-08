@@ -73,7 +73,7 @@ class Reply(BaseModel):
     slot: Slot
     strategy: str
     text: str
-    review_status: Literal["passed", "regenerated"] = "passed"
+    review_status: Literal["passed", "regenerated", "local_only"] = "passed"
 
 
 class RoutingDecision(BaseModel):
