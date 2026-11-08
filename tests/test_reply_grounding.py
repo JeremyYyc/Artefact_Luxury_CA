@@ -61,6 +61,10 @@ class ReplyGroundingTests(unittest.TestCase):
                 checks = reply_fact_checks(scenario, context)
                 self.assertTrue(grounding_issues(bad, checks))
                 self.assertEqual(grounding_issues(supported, checks), [])
+                if case_id == "EV-07":
+                    self.assertTrue(grounding_issues("公开陈列时两只都能看到。", checks))
+                    self.assertTrue(grounding_issues("到时可以一起比较 18 和 28 的搭配。", checks))
+                    self.assertEqual(grounding_issues("您想比较 18 和 28，具体展出款式我可以先核对。", checks), [])
                 if case_id == "PO-04":
                     self.assertTrue(grounding_issues("6,800 元是目录价，差别在用料和结构。", checks))
                 if case_id == "PO-05":
