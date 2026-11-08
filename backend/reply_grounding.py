@@ -65,8 +65,14 @@ PUBLIC_ONLY = check(
     r"(?:不同光线|不同灯光|衣料旁|灯光对比|多种光线)"
     r"|(?:届时|现场|公开陈列(?:时|期间)?)[^。！？]{0,15}(?:可以|可直接|能当场)[^。！？]{0,8}(?:试背|试用|上身)"
     r"|(?:两只|两款|两款包|18\s*(?:和|与|、)\s*28|28\s*(?:和|与|、)\s*18)[^，,。！？]{0,6}都(?:能|可(?:以)?)(?:看到|见到|试背|上身)"
-    r"|(?:可(?:以)?|能)(?:和[^，,。！？]{0,5})?(?:一起)?比较\s*(?:18\s*(?:和|与|、)\s*28|28\s*(?:和|与|、)\s*18)",
+    r"|(?:可(?:以)?|能)(?:和[^，,。！？]{0,5})?(?:一起)?比较\s*(?:18\s*(?:和|与|、)\s*28|28\s*(?:和|与|、)\s*18)"
+    r"|(?:公开陈列|公开展示|陈列现场)[^。！？]{0,8}(?:可以|可|能)(?:留意|欣赏|看到|观察)[^。！？]{0,24}"
+    r"(?:两只|两款|色泽|包身线条|外套旁|灯光|取物动作)",
     "公开陈列只确认目录写明的开放日期。可承接顾客关心的搭配，具体展出款式和试背安排需另外核对。省略私享场的试背和灯光、衣料对比体验。",
+)
+UNVERIFIED_INVITE_LOOKUP = check(
+    r"(?:没有|查不到|未查到|没查到|未找到)\s*(?:正式)?(?:的)?邀请记录",
+    "按顾客所说的没收到正式邀请和截图不能作为凭证来答。不要说核对过邀请记录。",
 )
 PRICE_CAUSE = check(
     r"(?:价差|差价|价格差异)[^，,。！？]{0,8}(?:来自|源于|在于|是因为|主要在|主要差在|差在|对应的是|由[^。！？]{0,10}造成)"
@@ -128,7 +134,7 @@ def reply_fact_checks(scenario: Scenario, context: dict) -> list[FactCheck]:
             if re.search(question, current) and any(term in item for item in avoid)
         ]
     if scenario == "EV" and public_display_context(context):
-        return [PUBLIC_ONLY]
+        return [PUBLIC_ONLY, UNVERIFIED_INVITE_LOOKUP] if private_entry_unverified(context) else [PUBLIC_ONLY]
     if scenario in ("PR", "PO"):
         checks = [DETACHED_STRAP_SHOULDER_CARRY] if detachable else []
         if any("size_and_capacity" in p for p in products):
