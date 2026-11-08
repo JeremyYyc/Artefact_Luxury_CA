@@ -126,6 +126,34 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([item["slot"] for item in model.feedback["passed_replies"]], [2, 3])
         self.assertEqual(model.feedback["issues"][0]["related_slot"], 2)
 
+    async def test_same_store_trial_in_different_wording_retries_one_slot(self):
+        class TrialModel:
+            def __init__(self):
+                self.retried = []
+
+            async def complete(self, messages, *, max_tokens):
+                body = messages[1]["content"].split("\n", 1)[1]
+                payload, offset = json.JSONDecoder().raw_decode(body)
+                if "options" in payload:
+                    return json.dumps({"slot_results": [reviewed_slot(i) for i in (1, 2, 3)], "rerun_slots": []})
+                slot = payload["slot"]
+                if body[offset:].strip():
+                    self.retried.append(slot)
+                    return json.dumps({"text": "外尺寸无法判断。方便时量一下镜盒最厚的地方，我先帮您初筛。"})
+                texts = {
+                    1: "这款的外尺寸不代表开口大小。建议把镜盒带到店试放，留意拉链能否自然合上。",
+                    2: "晚餐只带手机钥匙，18 更轻便。如果一定要带硬壳眼镜盒，28 的常见用途包括眼镜盒，不过仍需实物确认。",
+                    3: "现在不能保证放得下。您下次带上平常用的硬壳眼镜盒过来，我当面替您把它放进去看一下。",
+                }
+                return json.dumps({"text": texts[slot]})
+
+        model = TrialModel()
+        context = self.resources.prepare(self.presets["PR-06"])
+        replies = await self.workflow.generate("PR", context, model, "test")
+        self.assertEqual(model.retried, [3])
+        self.assertEqual([reply.review_status for reply in replies], ["passed", "passed", "regenerated"])
+        self.assertIn("最厚的地方", replies[2].text)
+
     def test_precheck_distinguishes_catalog_price_from_customer_budget(self):
         self.assertEqual(precheck("目录价是 1.48 万元，可先按您的 13,000 元预算考虑。", self.context), [])
         self.assertEqual(precheck("目录价为 14,000 元。", self.context)[0]["code"], "UNSUPPORTED_FACT")
@@ -145,6 +173,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             current_message={"text": "我没收到邀请，直接拿截图去可以吗？"},
         ), now=datetime.fromisoformat("2026-11-06T12:00:00+08:00"))
         denial = "私享预览仅限受邀者，截图不能入场。"
+        self.assertEqual(precheck(denial + "您没收到邀请，我这边无法确认您的席位。", context), [])
         self.assertEqual(precheck(denial + "请在截止前回复，我帮您核对席位。", context)[0]["code"],
                          "UNVERIFIED_COMMITMENT")
         self.assertEqual(precheck(denial + "公开陈列从11月22日开始，我可以帮您核对当天的开放时间。", context), [])

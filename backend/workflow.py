@@ -19,6 +19,9 @@ from langgraph.types import Send
 
 from backend.deepseek import DeepSeek, ModelError, ModelRateLimited
 from backend.models import GenerateInput, Reply, RoutingDecision, Scenario, Slot
+from backend.reply_actions import (
+    PRIVATE_EVENT_GUIDANCE, PUBLIC_DISPLAY_GUIDANCE, RECOMMENDATION_GUIDANCE, asks_about_public_display, offered_followups,
+)
 from backend.reply_requirements import invites_unverified_guest, private_entry_unverified, required_answers
 
 LOGGER = logging.getLogger("uvicorn.error.liuxi")
@@ -309,16 +312,24 @@ def review_issues(state: WorkflowState, drafts: list[Draft], review: dict) -> No
                     and re.search(r"缺少|缺失|未|没有|应(?:当|先|明确|提示)", issue["reason"])
                 )]
 
-    check_group(drafts, review)
+    check_group(state["scenario"], drafts, review)
 
 
-def check_group(drafts: list[Draft], review: dict, locked: frozenset[Slot] = frozenset()) -> None:
+def check_group(scenario: Scenario, drafts: list[Draft], review: dict, locked: frozenset[Slot] = frozenset()) -> None:
     results = review["slot_results"]
     texts = {draft["slot"]: re.sub(r"[\W_]", "", normalize("NFKC", draft["text"] or ""))
              for draft, item in zip(drafts, results, strict=True) if not item["issues"]}
-    duplicates = {frozenset((a, b)) for a, b in combinations(texts, 2) if texts[a] == texts[b] or (
-        min(len(texts[a]), len(texts[b])) >= 25 and SequenceMatcher(None, texts[a], texts[b], autojunk=False).ratio() >= 0.84
-    )}
+    actions = {draft["slot"]: offered_followups(scenario, draft["text"] or "") for draft in drafts}
+    duplicates = {}
+    for a, b in combinations(texts, 2):
+        shared = actions[a] & actions[b]
+        if shared:
+            duplicates[frozenset((a, b))] = "、".join(sorted(shared))
+        elif texts[a] == texts[b] or (
+            min(len(texts[a]), len(texts[b])) >= 25
+            and SequenceMatcher(None, texts[a], texts[b], autojunk=False).ratio() >= 0.84
+        ):
+            duplicates[frozenset((a, b))] = None
     if duplicates:
         compatible = (group for size in range(1, len(texts) + 1) for group in combinations(texts, size)
                       if all(frozenset(pair) not in duplicates for pair in combinations(group, 2)))
@@ -329,9 +340,11 @@ def check_group(drafts: list[Draft], review: dict, locked: frozenset[Slot] = fro
             slot = item["slot"]
             if slot in texts and slot not in retained:
                 related = next(other for other in retained if frozenset((slot, other)) in duplicates)
+                action = duplicates[frozenset((slot, related))]
                 item["issues"].append({
-                    "code": "DUPLICATE_STRATEGY", "reason": f"正文与第 {related} 条高度相似。",
-                    "fix": "保留必答事实，按本路策略改写核心切入点或下一步动作。不要只改字词或顺序。",
+                    "code": "DUPLICATE_STRATEGY",
+                    "reason": f"与第 {related} 条提出相同的下一步：{action}。" if action else f"正文与第 {related} 条高度相似。",
+                    "fix": "保留必答事实，换一个有依据的切入点或动作。没有合适的新动作时，直接给判断或取舍。",
                     "quote": None, "related_slot": related,
                 })
     for item in results:
@@ -342,7 +355,7 @@ def check_group(drafts: list[Draft], review: dict, locked: frozenset[Slot] = fro
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = f'{pack["prompt_version"]}+slot-recovery.2'
+        self.version = f'{pack["prompt_version"]}+slot-recovery.3'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()
@@ -422,6 +435,13 @@ class ReplyWorkflow:
             if private_entry_unverified(context):
                 guidance.append("删除私享报名、资格申请和席位核对。只有资料列明公开陈列时，才可提供公开开放日或公开到店安排。")
             strategy_prompt += "\n\n每条先答全以下必答点，再执行本路策略。\n" + "\n".join(guidance)
+        if scenario == "PR" and mode != "product_picking":
+            strategy_prompt += "\n\n本轮可选动作以此为准：" + RECOMMENDATION_GUIDANCE[slot]
+        if private_entry_unverified(context):
+            strategy_prompt += "\n\n本轮可选动作以此为准：" + PRIVATE_EVENT_GUIDANCE[slot]
+        elif scenario == "EV" and not context.get("companion_prohibited") and asks_about_public_display(context):
+            strategy_prompt += "\n\n顾客只问私享场结束后还能看什么，先答已核实的公开日期，省略私享场时间和报名信息。"
+            strategy_prompt += "\n本轮可选动作以此为准：" + PUBLIC_DISPLAY_GUIDANCE[slot]
         if context.get("companion_prohibited") and self.pack.get("companion_public"):
             primary_event = context["events"][0]
             if primary_event.get("public_milestone", {}).get("type") == "boutique_display_opening":
@@ -508,7 +528,7 @@ class ReplyWorkflow:
             review = self.validated_review(raw, drafts)
         except (ModelError, TimeoutError, ReviewError) as error:
             LOGGER.warning("review request_id=%s fallback=local_only error=%s", runtime.context.request_id, type(error).__name__)
-            review = self.local_review(drafts)
+            review = self.local_review(state["scenario"], drafts)
         else:
             review_issues(state, drafts, review)
             model_reviewed = True
@@ -518,7 +538,7 @@ class ReplyWorkflow:
         return {"review": review, "model_reviewed": model_reviewed}
 
     @staticmethod
-    def local_review(drafts: list[Draft], previous: dict | None = None) -> dict:
+    def local_review(scenario: Scenario, drafts: list[Draft], previous: dict | None = None) -> dict:
         passed = {} if previous is None else {
             item["slot"]: item["primary_action"] for item in previous["slot_results"] if not item["issues"]
         }
@@ -526,12 +546,12 @@ class ReplyWorkflow:
             {"slot": draft["slot"], "primary_action": passed.get(draft["slot"]), "issues": list(draft["precheck_issues"])}
             for draft in drafts
         ]}
-        check_group(drafts, review, frozenset(passed))
+        check_group(scenario, drafts, review, frozenset(passed))
         return review
 
     def check_regenerated(self, state: WorkflowState, runtime: Runtime[WorkflowRuntime]) -> dict:
         drafts = [state["drafts"][slot] for slot in SLOTS]
-        review = self.local_review(drafts, state["review"])
+        review = self.local_review(state["scenario"], drafts, state["review"])
         LOGGER.info("final_check request_id=%s rerun_slots=%s issue_codes=%s", runtime.context.request_id,
                     review["rerun_slots"], [[issue["code"] for issue in item["issues"]] for item in review["slot_results"]])
         return {"review": review}
