@@ -130,6 +130,26 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(precheck("目录价是 1.48 万元，可先按您的 13,000 元预算考虑。", self.context), [])
         self.assertEqual(precheck("目录价为 14,000 元。", self.context)[0]["code"], "UNSUPPORTED_FACT")
 
+    def test_care_answers_cover_each_requested_operation(self):
+        context = self.resources.prepare(GenerateInput(
+            scenario="PC", product_id="LIUXI-INTERVAL-28",
+            current_message={"text": "已经干了。叠层边有点灰，固定肩带是平放吗？"},
+        ))
+        self.assertEqual(precheck("叠层边缘用干燥软布轻拭。", context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck("肩带不用平放，叠层边缘用软布轻拭。", context)[0]["code"], "UNANSWERED")
+        self.assertEqual(precheck("固定肩带自然平放，叠层边缘用干燥软布沿外缘轻拭。", context), [])
+
+    def test_uninvited_customer_cannot_be_directed_to_private_signup(self):
+        context = self.resources.prepare(GenerateInput(
+            scenario="EV", event_id="LIUXI-EVT-20261121-WINTER-PREVIEW",
+            current_message={"text": "我没收到邀请，直接拿截图去可以吗？"},
+        ), now=datetime.fromisoformat("2026-11-06T12:00:00+08:00"))
+        denial = "私享预览仅限受邀者，截图不能入场。"
+        self.assertEqual(precheck(denial + "请在截止前回复，我帮您核对席位。", context)[0]["code"],
+                         "UNVERIFIED_COMMITMENT")
+        self.assertEqual(precheck(denial + "公开陈列从11月22日开始，我可以帮您核对当天的开放时间。", context), [])
+        self.assertEqual(precheck("11月22日有公开陈列。", context)[0]["code"], "UNANSWERED")
+
     async def test_selected_scenario_reaches_all_workers_and_reviewer(self):
         class RecordingModel:
             def __init__(self):

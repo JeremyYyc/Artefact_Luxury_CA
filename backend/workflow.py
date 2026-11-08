@@ -19,6 +19,7 @@ from langgraph.types import Send
 
 from backend.deepseek import DeepSeek, ModelError, ModelRateLimited
 from backend.models import GenerateInput, Reply, RoutingDecision, Scenario, Slot
+from backend.reply_requirements import invites_unverified_guest, private_entry_unverified, required_answers
 
 LOGGER = logging.getLogger("uvicorn.error.liuxi")
 SLOTS: tuple[Slot, Slot, Slot] = (1, 2, 3)
@@ -188,6 +189,18 @@ def mentions_date(text: str, iso_date: str) -> bool:
 
 
 def required_answer_issue(text: str, context: dict) -> dict | None:
+    if invites_unverified_guest(text, context):
+        return {
+            "code": "UNVERIFIED_COMMITMENT", "reason": "客户未证明受邀，草稿仍引导报名或核对私享席位。",
+            "fix": "明确截图不能入场，删掉私享报名、资格申请和席位核对。可说明目录已核实的公开开放日。",
+            "quote": None, "related_slot": None,
+        }
+    missing = [answer.guidance for answer in required_answers(context) if not answer.answered_by(text)]
+    if missing:
+        return {
+            "code": "UNANSWERED", "reason": "草稿没有回答本轮已有依据的必答点。",
+            "fix": "先答全：" + " ".join(missing), "quote": None, "related_slot": None,
+        }
     if context.get("companion_prohibited"):
         sentences = re.split(r"[。！？；.!?;]", text)
         private_clauses = [clause for clause in REPLY_CLAUSE.split(text) if not PUBLIC_DISPLAY.search(clause)]
@@ -329,7 +342,7 @@ def check_group(drafts: list[Draft], review: dict, locked: frozenset[Slot] = fro
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = f'{pack["prompt_version"]}+slot-recovery.1'
+        self.version = f'{pack["prompt_version"]}+slot-recovery.2'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()
@@ -404,6 +417,11 @@ class ReplyWorkflow:
             strategy_prompt = override
         if rules:
             strategy_prompt = f"{rules}\n\n{strategy_prompt}"
+        if answers := required_answers(context):
+            guidance = [answer.guidance for answer in answers]
+            if private_entry_unverified(context):
+                guidance.append("删除私享报名、资格申请和席位核对。只有资料列明公开陈列时，才可提供公开开放日或公开到店安排。")
+            strategy_prompt += "\n\n每条先答全以下必答点，再执行本路策略。\n" + "\n".join(guidance)
         if context.get("companion_prohibited") and self.pack.get("companion_public"):
             primary_event = context["events"][0]
             if primary_event.get("public_milestone", {}).get("type") == "boutique_display_opening":
