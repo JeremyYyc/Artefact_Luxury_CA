@@ -22,6 +22,7 @@ from backend.models import GenerateInput, Reply, RoutingDecision, Scenario, Slot
 from backend.reply_actions import (
     PRIVATE_EVENT_GUIDANCE, PUBLIC_DISPLAY_GUIDANCE, RECOMMENDATION_GUIDANCE, asks_about_public_display, offered_followups,
 )
+from backend.reply_grounding import grounding_issues, public_display_context, reply_fact_checks
 from backend.reply_requirements import invites_unverified_guest, private_entry_unverified, required_answers
 
 LOGGER = logging.getLogger("uvicorn.error.liuxi")
@@ -355,7 +356,7 @@ def check_group(scenario: Scenario, drafts: list[Draft], review: dict, locked: f
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = f'{pack["prompt_version"]}+slot-recovery.3'
+        self.version = f'{pack["prompt_version"]}+fact-grounding.1'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()
@@ -423,6 +424,7 @@ class ReplyWorkflow:
         scenario = task["scenario"]
         strategy = self.strategies[scenario][slot]
         context = task["context"]
+        fact_checks = reply_fact_checks(scenario, context)
         rules = self.pack.get("scenario_rules", {}).get(scenario)
         strategy_prompt = strategy["prompt"]
         mode = generation_mode(scenario, context)
@@ -447,6 +449,9 @@ class ReplyWorkflow:
             if primary_event.get("public_milestone", {}).get("type") == "boutique_display_opening":
                 scoped = self.pack["companion_public"][slot - 1]
                 strategy_prompt = f"{strategy_prompt}\n\n{scoped}"
+        if fact_checks:
+            guidance = "\n".join(rule.guidance for rule in fact_checks)
+            strategy_prompt += f"\n\n本轮事实边界适用于所有候选和补写稿。\n{guidance}"
         feedback = task.get("feedback")
         feedback_block = ""
         if feedback:
@@ -454,6 +459,11 @@ class ReplyWorkflow:
                 feedback_json=as_json(feedback),
             )
         prompt_context = context
+        if scenario == "EV" and public_display_context(context):
+            prompt_context = {
+                **context, "events": [{key: value for key, value in event.items() if key != "highlights"}
+                                       for event in context["events"]],
+            }
         if mode == "event_invitation" and slot in (1, 3):
             prompt_context = {
                 **context, "history": [], "products": [],
@@ -482,6 +492,7 @@ class ReplyWorkflow:
         issues = precheck(text, context)
         if text:
             issues.extend(contract_issues(text, scenario, slot, mode, context))
+            issues.extend(grounding_issues(text, fact_checks))
         LOGGER.info("draft request_id=%s slot=%d attempt=%d ms=%d upstream_status=%s issues=%s", runtime.context.request_id,
                     slot, attempt, (perf_counter() - start) * 1000, error_status,
                     [issue["code"] for issue in issues])
