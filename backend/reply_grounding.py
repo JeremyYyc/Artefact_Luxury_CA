@@ -34,6 +34,11 @@ HAND_CARRY_FREES_HANDS = check(
     r"[^。！？]{0,24}手提[^。！？]{0,18}(?:空出手|腾出手|解放双手)",
     "手提和肩背分别描述。只有已知肩背方式可腾出手，拆下肩带改手提时不要说能空出手。",
 )
+DETACHED_STRAP_SHOULDER_CARRY = check(
+    r"(?:拆下|取下|摘下|卸下|卸掉|拆掉)肩带[^，,。！？；;]{0,9}(?:可|可以|能|继续|还能|再)?肩背"
+    r"|肩带(?:拆下|取下|摘下|卸下|拆掉)后?[^，,。！？；;]{0,6}(?:可|可以|能|继续|还能|再)?肩背",
+    "可拆肩带款装上肩带后肩背，取下肩带后手提。分别说明两种背法。",
+)
 HARD_COVER_IS_IRRELEVANT = check(
     r"硬(?:皮本|壳|封面|封本)[^，。！？]{0,10}(?:不影响|没有影响|无关|无所谓)",
     "只说明主仓的已知尺寸与测量口径。硬封本的形状、厚度和实际开合需用实物核对。",
@@ -43,14 +48,18 @@ DRYER_CAUSE = check(
     "按手册说明不用吹风机及安全晾干方式，省略手册未记载的热风损伤后果。",
 )
 CARD_SLOT_CAUSE = check(
-    r"(?:多塞|塞多|厚卡|多放)[^，,。！？]{0,26}(?:变形|撑(?:坏|大|松)|(?:导致|容易)[^。！？]{0,12}滑出)"
-    r"|(?:多塞|塞多|厚卡|多放)[^，,。！？]{0,14}[，,]\s*(?:反而|会|可能|容易|会让)[^。！？]{0,12}(?:变形|滑出)",
+    r"(?:多塞|塞多|厚卡|多放)[^，,。！？；;]{0,26}(?:变形|撑(?:坏|大|松)|(?:导致|容易)[^。！？；;]{0,12}滑出)"
+    r"|(?:多塞|塞多|厚卡|多放)[^，,。！？；;]{0,14}[，,]\s*(?:反而|会|可能|容易|会让)[^。！？；;]{0,12}(?:变形|滑出)",
     "分别说明同一槽不塞多张厚卡，以及观察到滑卡时可联系顾问。手册未确认滑卡或变形的成因。",
 )
 VISIT_OUTCOME = check(
     r"(?<!如果)(?:后来|之后|最近)[^。！？]{0,10}(?:一直)?没(?:顾上|来(?:过|店)|去(?:过|店)|试(?:过|放|背)|能来)"
     r"(?![吗呢吧])(?=[，,。！？!?；;]|$)",
     "只复述客户当时说有空再来或已聊过的偏好。之后是否到店或试过没有记录，可以轻问，也可以省略。",
+)
+RECENT_WEATHER = check(
+    r"(?:这几天|近来|最近|今天|这两天)[^。！？]{0,8}(?:天气(?:转凉|降温|升温|变冷|变热)|降温|连日下雨|一直下雨)",
+    "没有本轮地点和天气资料时，只写问候或祝愿，省略近期天气判断。",
 )
 PUBLIC_ONLY = check(
     r"(?:不同光线|不同灯光|衣料旁|灯光对比|多种光线)"
@@ -88,11 +97,16 @@ def public_display_context(context: dict) -> bool:
 def reply_fact_checks(scenario: Scenario, context: dict) -> list[FactCheck]:
     products = context.get("products", [])
     history = "。".join(item["text"] for item in context.get("history", []) if item["role"] == "customer")
-    if scenario == "BG" and any("可拆肩带" in str(p.get("use_cases_and_features", "")) for p in products):
-        return [HAND_CARRY_FREES_HANDS]
+    current = (context.get("current_message") or {}).get("text", "")
+    detachable = any("可拆肩带" in feature for p in products
+                     for feature in p.get("use_cases_and_features", {}).get("features", []))
+    if scenario == "BG" and detachable:
+        return [HAND_CARRY_FREES_HANDS, DETACHED_STRAP_SHOULDER_CARRY]
     if scenario == "RE":
         known = history + "。" + (context.get("advisor_goal") or "") + "。" + (context.get("client_background") or "")
         checks = [] if VISIT_OUTCOME.claim.search(known) else [VISIT_OUTCOME]
+        if not RECENT_WEATHER.claim.search((context.get("advisor_goal") or "") + "。" + current):
+            checks.append(RECENT_WEATHER)
         for count in dict.fromkeys(OCCASIONAL_CARDS.findall(history)):
             variants = r"(?:四|4)" if count in ("四", "4") else re.escape(count)
             stronger = check(
@@ -104,12 +118,17 @@ def reply_fact_checks(scenario: Scenario, context: dict) -> list[FactCheck]:
         return checks
     if scenario == "PC":
         avoid = [item for p in products for item in p.get("care_manual", {}).get("avoid", [])]
-        return [rule for term, rule in (("吹风机", DRYER_CAUSE), ("多张厚卡", CARD_SLOT_CAUSE))
-                if any(term in item for item in avoid)]
+        return [
+            rule for term, question, rule in (
+                ("吹风机", r"吹风|热风|雨滴|溅[^。！？]{0,5}雨", DRYER_CAUSE),
+                ("多张厚卡", r"塞|厚卡|撑紧|滑出|滑出来", CARD_SLOT_CAUSE),
+            )
+            if re.search(question, current) and any(term in item for item in avoid)
+        ]
     if scenario == "EV" and public_display_context(context):
         return [PUBLIC_ONLY]
     if scenario in ("PR", "PO"):
-        checks = []
+        checks = [DETACHED_STRAP_SHOULDER_CARRY] if detachable else []
         if any("size_and_capacity" in p for p in products):
             checks.append(HARD_COVER_IS_IRRELEVANT)
         for product in products:
@@ -128,7 +147,6 @@ def reply_fact_checks(scenario: Scenario, context: dict) -> list[FactCheck]:
             ))
         if scenario == "PO":
             checks.extend((PRICE_CAUSE, UNSCOPED_ALTERNATIVE))
-            current = (context.get("current_message") or {}).get("text", "")
             if re.search(r"别家|其他品牌|其它品牌|竞品|别的品牌", current):
                 checks.append(UNVERIFIED_COMPETITOR)
         return checks

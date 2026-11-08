@@ -65,3 +65,15 @@ class ReplyGroundingTests(unittest.TestCase):
                     self.assertTrue(grounding_issues("6,800 元是目录价，差别在用料和结构。", checks))
                 if case_id == "PO-05":
                     self.assertTrue(grounding_issues("4,000 元差价对应的是两款不同的用料。", checks))
+                    self.assertTrue(grounding_issues("18 可以拆下肩带肩背。", checks))
+                    self.assertEqual(grounding_issues("18 可手提，装上肩带也能肩背。", checks), [])
+
+    def test_wet_card_case_does_not_trigger_thick_card_rules(self):
+        request = GenerateInput(
+            scenario="PC", product_id="LIUXI-INTERVAL-CARD-CASE",
+            current_message={"text": "卡夹湿了，我先把卡片拿出来吗？"},
+        )
+        checks = reply_fact_checks("PC", Resources().prepare(request))
+        self.assertEqual(checks, [])
+        advice = "先取出卡片，再自然晾干。别塞多张厚卡；如果之后观察到卡片容易滑出，可以联系我。"
+        self.assertEqual(grounding_issues(advice, checks), [])
