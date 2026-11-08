@@ -150,6 +150,12 @@ def contract_issues(text: str, scenario: Scenario, slot: Slot, mode: str | None,
     if mode == "product_picking" and slot == 3 and (match := MEASURING.search(text)):
         add("STRATEGY_MISMATCH", "顾客只要挑选方法，尚无具体物件可验证。",
             "给一个可以直接做的挑法：回想一次实际出门，选出最想改善的一个用包动作。不要求测量或到店。", match)
+    if scenario == "EV" and slot in (1, 2) and private_entry_unverified(context) and offered_followups(scenario, text):
+        issues.append({
+            "code": "STRATEGY_MISMATCH", "reason": "公开到店安排的核对动作由第 3 路承担。",
+            "fix": "保留入场边界和公开日期，删除代查、询问到店时间或核对安排的动作。",
+            "quote": None, "related_slot": 3,
+        })
     if scenario in ("PR", "PO") and any("size_and_capacity" in product for product in context["products"]):
         for clause in REPLY_CLAUSE.split(text):
             if HARD_COVER.search(clause) and not FIT_UNCERTAINTY.search(clause) and (match := FIT_GUARANTEE.search(clause)):
@@ -356,7 +362,7 @@ def check_group(scenario: Scenario, drafts: list[Draft], review: dict, locked: f
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = f'{pack["prompt_version"]}+fact-grounding.6'
+        self.version = f'{pack["prompt_version"]}+fact-grounding.7'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()
@@ -467,9 +473,12 @@ class ReplyWorkflow:
         if optional_reactivation and slot == 1:
             prompt_context = {**context, "history": []}
         if scenario == "EV" and public_display_context(context):
+            events = [{key: value for key, value in event.items() if key != "highlights"} for event in context["events"]]
+            if private_entry_unverified(context):
+                events = [{**event, "rsvp": {key: value for key, value in event["rsvp"].items() if key == "access"}}
+                          for event in events]
             prompt_context = {
-                **context, "events": [{key: value for key, value in event.items() if key != "highlights"}
-                                       for event in context["events"]],
+                **context, "events": events,
             }
             if asks_about_public_display(context) and not context.get("companion_prohibited"):
                 prompt_context.update(history=[], products=[])
