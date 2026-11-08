@@ -86,3 +86,45 @@ class ReplyGroundingTests(unittest.TestCase):
         self.assertEqual(checks, [])
         advice = "先取出卡片，再自然晾干。别塞多张厚卡；如果之后观察到卡片容易滑出，可以联系我。"
         self.assertEqual(grounding_issues(advice, checks), [])
+
+    def test_catalog_examples_and_external_dimensions_keep_their_scope(self):
+        resources = Resources()
+        request = GenerateInput(
+            scenario="PR", product_ids=["LIUXI-INTERVAL-18", "LIUXI-INTERVAL-28"],
+            current_message={"text": "想看有拉链的，能装下我的硬壳眼镜盒吗？"},
+        )
+        checks = reply_fact_checks("PR", resources.prepare(request))
+        for claim in (
+            "您提到的手机、钥匙、硬壳眼镜盒和短伞，目录里列为典型可装物品。",
+            "目录列有硬壳眼镜盒和短折伞。",
+            "主仓仅按包身外部测量为 18×14×8 厘米。",
+            "18 的内径是 18×14×8 厘米。",
+        ):
+            with self.subTest(claim=claim):
+                self.assertTrue(grounding_issues(claim, checks))
+        for supported in (
+            "目录列有眼镜盒，您的硬壳眼镜盒能否放下需要实物核对。",
+            "目录没有列硬壳眼镜盒。主仓不能按包身外部尺寸推算。",
+            "18 的包身外尺寸是 18×14×8 厘米，主仓尺寸未提供。",
+        ):
+            with self.subTest(supported=supported):
+                self.assertEqual(grounding_issues(supported, checks), [])
+        trace = request.model_copy(update={"product_ids": ["LIUXI-TRACE-A5"]})
+        checks = reply_fact_checks("PR", resources.prepare(trace))
+        self.assertEqual(grounding_issues("主仓内尺寸约 22.5×16×2 厘米。", checks), [])
+
+    def test_item_frequency_is_preserved_when_restating_customer_history(self):
+        request = GenerateInput(
+            scenario="PO", product_id="LIUXI-INTERVAL-28",
+            current_message={"text": "18,800 元比我想的高一点，我想再想想。"},
+            history=[{"role": "customer", "text": "常带眼镜盒，有时还要带把短伞。"}],
+        )
+        resources = Resources()
+        checks = reply_fact_checks("PO", resources.prepare(request))
+        self.assertTrue(grounding_issues("您通勤常带眼镜盒和短伞，下次可以带来实际试放。", checks))
+        self.assertTrue(grounding_issues("您平时经常带一把短折伞。", checks))
+        self.assertEqual(grounding_issues("您常带眼镜盒，偶尔也会带短伞。", checks), [])
+        self.assertEqual(grounding_issues("如果您以后经常带短伞，也可以带来试放。", checks), [])
+        current = request.model_copy(update={"history": []})
+        checks = reply_fact_checks("PO", resources.prepare(current))
+        self.assertEqual(grounding_issues("如果常带短折伞，可以用实物核对。", checks), [])
