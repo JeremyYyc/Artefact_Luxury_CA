@@ -20,8 +20,8 @@ React 根据 [UI/UX 设计稿](../design/LIUXI_AI_Reply_UI_UX_Design.pdf)实现�
 | `GET /api/presets` | 返回六个可编辑的演示输入，包含场景、客户背景、历史对话和相关资料 |
 | `GET /api/library` | 返回工作台可选的虚构客户、商品、活动和品牌资料 |
 | `POST /api/generate` | 接收场景或自由描述、客户资料、历史对话与本轮待回复内容。可选字段包括商品 ID、颜色、主活动 ID、参考活动 ID 列表和绑定到客户与主活动的 `confirmed_invitation` |
-| 生成成功 | 返回 `request_id`、`scenario`、`workflow_version` 和有序的三条 `options`，每条包含 `slot`、`strategy`、`text` 和 `review_status`。状态为 `passed` 或 `regenerated`。`routing` 说明场景来源，`basis` 提供本轮取用的资料 |
-| 生成异常 | 用 `422` 表示输入不合法或需要澄清，`429` 表示限流，`502` 表示模型响应异常或无法组成三条非空正文，`504` 表示超时。前端保留输入并给出对应提示 |
+| 生成成功 | 返回 `request_id`、`scenario`、`workflow_version` 和有序的三条 `options`，每条包含 `slot`、`strategy`、`text` 和 `review_status`。状态为 `passed`（通过模型及规则检查）、`regenerated`（补写后通过规则检查）或 `local_only`（模型校验不可用，初稿通过规则检查）。`routing` 说明场景来源，`basis` 提供本轮取用的资料 |
+| 生成异常 | 用 `422` 表示输入不合法或需要澄清，`429` 表示限流，`502` 表示模型响应异常或无法组成三条通过规则检查的正文，`504` 表示超时。前端保留输入并给出对应提示 |
 
 已选场景直接路由。自由输入才用模型识别六个场景之一。意图不明时请顾问确认。进入场景后，优先复用输入里的事实，仅按已选 ID 补齐必要资料，并选取该场景的三套策略提示词。六个场景共维护 18 套策略。
 
@@ -29,9 +29,9 @@ React 根据 [UI/UX 设计稿](../design/LIUXI_AI_Reply_UI_UX_Design.pdf)实现�
 
 父图并发启动三个子工作流，每路调用一次 DeepSeek 并生成一条正文。首轮代码预检覆盖格式、目录价、护理和其他适用事实边界，整组模型校验检查事实、承诺、语气和实际沟通动作，代码也检查正文重复。主动问候且未给出护理操作时，校验不会因为没有补历史护理禁忌而判退。
 
-Sprint 1 对整组只校验一次。通过的正文保留，判退槽位携带原因和已占用动作重生成一次。重生成稿直接进入交付，仅检查格式和正文非空，成功时固定返回三条。策略去重、事实边界和重生成后的校验方式留到 Sprint 2 统一讨论。
+Sprint 2 保留一次整组模型校验。单路超时、限流、坏格式或判退时，保留已通过的候选，仅补对应槽位，最多补写两轮。补写带入判退原因和已通过候选。每轮均检查格式、已有事实与安全规则，并与已保留候选判重。模型校验超时或返回无效结果时使用同一套规则，并在结果卡提醒顾问核对。最终凑齐三条通过规则检查的正文才返回成功。
 
-V1 默认关闭 Function Calling，实时库存查询暂不实现。三个子工作流共用经确认的输入和资料。首轮生成、首轮校验和重生成共用一个请求时限，剩余时间不足时返回超时状态。运行日志记录请求 ID、工作流版本、场景、各阶段耗时和结果状态。 [LangGraph 子图与状态](https://docs.langchain.com/oss/python/langgraph/use-subgraphs) · [LangGraph 并发](https://docs.langchain.com/oss/python/langgraph/workflows-agents#parallelization)
+V1 默认关闭 Function Calling，实时库存查询暂不实现。三个子工作流共用经确认的输入和资料。路由完成后，首轮生成、整组校验、第一轮补写和第二轮补写的截止点分别位于剩余请求预算的 45%、65%、84% 和 99%，提前结束的阶段会给下一阶段留出更多时间。运行日志记录请求 ID、工作流版本、场景、各阶段耗时和结果状态。 [LangGraph 子图与状态](https://docs.langchain.com/oss/python/langgraph/use-subgraphs) · [LangGraph 并发](https://docs.langchain.com/oss/python/langgraph/workflows-agents#parallelization)
 
 ## 数据与评测
 

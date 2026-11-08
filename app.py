@@ -73,7 +73,7 @@ async def generate(input_data: GenerateInput, request: Request, response: Respon
     if state.model is None:
         raise HTTPException(503, "请先在服务端配置 DeepSeek API Key。", headers=NO_STORE)
     try:
-        async with asyncio.timeout(state.timeout):
+        async with asyncio.timeout(state.timeout) as request_timeout:
             scenario = input_data.scenario
             routing = RoutingInfo(mode="selected")
             if scenario is None:
@@ -85,7 +85,8 @@ async def generate(input_data: GenerateInput, request: Request, response: Respon
                 scenario = decision.scenario
                 routing = RoutingInfo(mode="automatic", reason=decision.reason)
             context = state.resources.prepare(input_data, scenario=scenario)
-            options = await state.workflow.generate(scenario, context, state.model, request_id)
+            options = await state.workflow.generate(scenario, context, state.model, request_id,
+                                                    deadline=request_timeout.when())
     except InvalidInput as error:
         raise HTTPException(422, str(error), headers=NO_STORE) from None
     except ModelRateLimited:

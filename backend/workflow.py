@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -8,7 +9,7 @@ from itertools import combinations
 from operator import or_
 from string import Template
 from time import perf_counter
-from typing import Annotated, NotRequired, TypedDict
+from typing import Annotated, Literal, NotRequired, TypedDict
 from unicodedata import normalize
 
 from jsonschema import Draft202012Validator
@@ -16,11 +17,14 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import Send
 
-from backend.deepseek import DeepSeek
+from backend.deepseek import DeepSeek, ModelError, ModelRateLimited
 from backend.models import GenerateInput, Reply, RoutingDecision, Scenario, Slot
 
 LOGGER = logging.getLogger("uvicorn.error.liuxi")
 SLOTS: tuple[Slot, Slot, Slot] = (1, 2, 3)
+# Each phase stops before the next one needs the remaining request time.
+DRAFT_DEADLINE_FRACTIONS = (0.45, 0.84, 0.99)
+REVIEW_DEADLINE_FRACTION = 0.65
 NUMBER = r"(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?"
 LABELED_PRICE = re.compile(rf"(目录价(?:格)?|折后价(?:格)?)\s*(?:是|为|:)?\s*¥?\s*({NUMBER})(\s*万)?")
 ZIPPER_MOVEMENT = r"(?:退回|退开|往回退|向后退|回拉|退一点)"
@@ -68,6 +72,8 @@ class Draft(TypedDict):
     strategy_prompt: str
     text: str | None
     precheck_issues: list[dict]
+    attempt: int
+    error_status: Literal[429, 502, 504] | None
 
 
 class DraftUpdate(TypedDict):
@@ -78,6 +84,7 @@ class GenerationTask(TypedDict):
     scenario: Scenario
     context: dict
     slot: Slot
+    attempt: NotRequired[int]
     feedback: NotRequired[dict]
 
 
@@ -85,12 +92,20 @@ class WorkflowState(DraftUpdate):
     scenario: Scenario
     context: dict
     review: NotRequired[dict]
+    model_reviewed: NotRequired[bool]
 
 
 @dataclass(frozen=True)
 class WorkflowRuntime:
     model: DeepSeek
     request_id: str
+    deadline: float | None = None
+    started_at: float = 0.0
+
+    def stage_deadline(self, fraction: float) -> float | None:
+        if self.deadline is None:
+            return None
+        return self.started_at + (self.deadline - self.started_at) * fraction
 
 
 def as_json(value: dict) -> str:
@@ -281,6 +296,11 @@ def review_issues(state: WorkflowState, drafts: list[Draft], review: dict) -> No
                     and re.search(r"缺少|缺失|未|没有|应(?:当|先|明确|提示)", issue["reason"])
                 )]
 
+    check_group(drafts, review)
+
+
+def check_group(drafts: list[Draft], review: dict, locked: frozenset[Slot] = frozenset()) -> None:
+    results = review["slot_results"]
     texts = {draft["slot"]: re.sub(r"[\W_]", "", normalize("NFKC", draft["text"] or ""))
              for draft, item in zip(drafts, results, strict=True) if not item["issues"]}
     duplicates = {frozenset((a, b)) for a, b in combinations(texts, 2) if texts[a] == texts[b] or (
@@ -289,7 +309,9 @@ def review_issues(state: WorkflowState, drafts: list[Draft], review: dict) -> No
     if duplicates:
         compatible = (group for size in range(1, len(texts) + 1) for group in combinations(texts, size)
                       if all(frozenset(pair) not in duplicates for pair in combinations(group, 2)))
-        retained = max(compatible, key=lambda group: (len(group), tuple(-slot for slot in group)))
+        retained = max(compatible, key=lambda group: (
+            len(locked.intersection(group)), len(group), tuple(-slot for slot in group)
+        ))
         for item in results:
             slot = item["slot"]
             if slot in texts and slot not in retained:
@@ -307,7 +329,7 @@ def review_issues(state: WorkflowState, drafts: list[Draft], review: dict) -> No
 class ReplyWorkflow:
     def __init__(self, pack: dict):
         self.pack = pack
-        self.version = pack["prompt_version"]
+        self.version = f'{pack["prompt_version"]}+slot-recovery.1'
         self.strategies = {
             scenario: {entry["slot"]: entry for entry in entries}
             for scenario, entries in pack["scenarios"].items()
@@ -327,10 +349,12 @@ class ReplyWorkflow:
         graph.add_node("generate_reply", draft_worker)
         graph.add_node("regenerate_reply", draft_worker)
         graph.add_node("review_replies", self.review_replies)
+        graph.add_node("check_regenerated", self.check_regenerated)
         graph.add_conditional_edges(START, self.first_batch, ["generate_reply"])
         graph.add_edge("generate_reply", "review_replies")
         graph.add_conditional_edges("review_replies", self.after_review, ["regenerate_reply", END])
-        graph.add_edge("regenerate_reply", END)
+        graph.add_edge("regenerate_reply", "check_regenerated")
+        graph.add_conditional_edges("check_regenerated", self.after_review, ["regenerate_reply", END])
         self.graph = graph.compile()
 
     def messages(self, kind: str, **values: str) -> list[dict[str, str]]:
@@ -369,6 +393,7 @@ class ReplyWorkflow:
     async def draft_reply(self, task: GenerationTask, runtime: Runtime[WorkflowRuntime]) -> DraftUpdate:
         start = perf_counter()
         slot = task["slot"]
+        attempt = task.get("attempt", 1)
         scenario = task["scenario"]
         strategy = self.strategies[scenario][slot]
         context = task["context"]
@@ -403,15 +428,24 @@ class ReplyWorkflow:
             strategy_prompt=strategy_prompt,
             retry_feedback_block=feedback_block,
         )
-        draft = self.parse("generation", await runtime.context.model.complete(messages, max_tokens=512))
+        raw = None
+        error_status = None
+        try:
+            async with asyncio.timeout_at(runtime.context.stage_deadline(DRAFT_DEADLINE_FRACTIONS[attempt - 1])):
+                raw = await runtime.context.model.complete(messages, max_tokens=512)
+        except ModelRateLimited:
+            error_status = 429
+        except TimeoutError:
+            error_status = 504
+        except ModelError:
+            error_status = 502
+        draft = self.parse("generation", raw)
         text = (draft["text"].strip() or None) if draft else None
-        issues = []
-        if not feedback:
-            issues = precheck(text, context)
-            if text:
-                issues.extend(contract_issues(text, scenario, slot, mode, context))
-        LOGGER.info("draft request_id=%s slot=%d attempt=%d ms=%d issues=%s", runtime.context.request_id,
-                    slot, 2 if feedback else 1, (perf_counter() - start) * 1000,
+        issues = precheck(text, context)
+        if text:
+            issues.extend(contract_issues(text, scenario, slot, mode, context))
+        LOGGER.info("draft request_id=%s slot=%d attempt=%d ms=%d upstream_status=%s issues=%s", runtime.context.request_id,
+                    slot, attempt, (perf_counter() - start) * 1000, error_status,
                     [issue["code"] for issue in issues])
         return {"drafts": {slot: {
             "slot": slot,
@@ -419,15 +453,12 @@ class ReplyWorkflow:
             "strategy_prompt": strategy_prompt,
             "text": text,
             "precheck_issues": issues,
+            "attempt": attempt,
+            "error_status": error_status,
         }}}
 
-    async def review_replies(self, state: WorkflowState, runtime: Runtime[WorkflowRuntime]) -> dict:
-        start = perf_counter()
-        drafts = [state["drafts"][slot] for slot in SLOTS]
-        messages = self.messages("review", input_json=as_json({
-            "scenario": state["scenario"], "context": state["context"], "options": drafts, "locked_slots": [],
-        }))
-        review = self.parse("review", await runtime.context.model.complete(messages, max_tokens=1800))
+    def validated_review(self, raw: str | None, drafts: list[Draft]) -> dict:
+        review = self.parse("review", raw)
         if not review or tuple(item["slot"] for item in review["slot_results"]) != SLOTS:
             raise ReviewError("invalid review response")
         failed = [item["slot"] for item in review["slot_results"] if item["status"] == "fail"]
@@ -440,19 +471,58 @@ class ReplyWorkflow:
             if prechecks:
                 codes = {issue["code"] for issue in prechecks}
                 item["issues"] = [*prechecks, *(issue for issue in item["issues"] if issue["code"] not in codes)]
-        review_issues(state, drafts, review)
-        failed = review["rerun_slots"]
+        return review
 
+    async def review_replies(self, state: WorkflowState, runtime: Runtime[WorkflowRuntime]) -> dict:
+        start = perf_counter()
+        drafts = [state["drafts"][slot] for slot in SLOTS]
+        options = [
+            {key: value for key, value in draft.items() if key not in ("attempt", "error_status")}
+            for draft in drafts
+        ]
+        messages = self.messages("review", input_json=as_json({
+            "scenario": state["scenario"], "context": state["context"], "options": options, "locked_slots": [],
+        }))
+        model_reviewed = False
+        try:
+            async with asyncio.timeout_at(runtime.context.stage_deadline(REVIEW_DEADLINE_FRACTION)):
+                raw = await runtime.context.model.complete(messages, max_tokens=1800)
+            review = self.validated_review(raw, drafts)
+        except (ModelError, TimeoutError, ReviewError) as error:
+            LOGGER.warning("review request_id=%s fallback=local_only error=%s", runtime.context.request_id, type(error).__name__)
+            review = self.local_review(drafts)
+        else:
+            review_issues(state, drafts, review)
+            model_reviewed = True
         LOGGER.info("review request_id=%s round=1 ms=%d rerun_slots=%s issue_codes=%s",
-                    runtime.context.request_id, (perf_counter() - start) * 1000, failed,
+                    runtime.context.request_id, (perf_counter() - start) * 1000, review["rerun_slots"],
                     [[issue["code"] for issue in item["issues"]] for item in review["slot_results"]])
+        return {"review": review, "model_reviewed": model_reviewed}
+
+    @staticmethod
+    def local_review(drafts: list[Draft], previous: dict | None = None) -> dict:
+        passed = {} if previous is None else {
+            item["slot"]: item["primary_action"] for item in previous["slot_results"] if not item["issues"]
+        }
+        review = {"slot_results": [
+            {"slot": draft["slot"], "primary_action": passed.get(draft["slot"]), "issues": list(draft["precheck_issues"])}
+            for draft in drafts
+        ]}
+        check_group(drafts, review, frozenset(passed))
+        return review
+
+    def check_regenerated(self, state: WorkflowState, runtime: Runtime[WorkflowRuntime]) -> dict:
+        drafts = [state["drafts"][slot] for slot in SLOTS]
+        review = self.local_review(drafts, state["review"])
+        LOGGER.info("final_check request_id=%s rerun_slots=%s issue_codes=%s", runtime.context.request_id,
+                    review["rerun_slots"], [[issue["code"] for issue in item["issues"]] for item in review["slot_results"]])
         return {"review": review}
 
     @staticmethod
     def after_review(state: WorkflowState) -> str | list[Send]:
         review = state["review"]
         failed = review["rerun_slots"]
-        if not failed:
+        if not failed or any(state["drafts"][slot]["attempt"] >= len(DRAFT_DEADLINE_FRACTIONS) for slot in failed):
             return END
         passed = [
             {key: state["drafts"][slot][key] for key in ("slot", "strategy", "text")}
@@ -469,8 +539,7 @@ class ReplyWorkflow:
             if slot not in failed:
                 continue
             precheck_issues = state["drafts"][slot]["precheck_issues"]
-            precheck_codes = {issue["code"] for issue in precheck_issues}
-            issues = [*precheck_issues, *(issue for issue in item["issues"] if issue["code"] not in precheck_codes)]
+            issues = item["issues"]
             mode = generation_mode(state["scenario"], state["context"])
             if mode == "pure_greeting" or (mode == "product_picking" and slot == 3):
                 # The current task's scoped instructions own the action. A review can still cite a failure.
@@ -481,22 +550,29 @@ class ReplyWorkflow:
                 "scenario": state["scenario"],
                 "context": state["context"],
                 "slot": slot,
+                "attempt": state["drafts"][slot]["attempt"] + 1,
                 "feedback": {"slot": slot, "issues": issues, "passed_replies": passed,
                              "occupied_actions": occupied_actions},
             }))
         return tasks
 
     async def generate(self, scenario: Scenario, context: dict, model: DeepSeek,
-                       request_id: str) -> tuple[Reply, Reply, Reply]:
+                       request_id: str, *, deadline: float | None = None) -> tuple[Reply, Reply, Reply]:
+        runtime = WorkflowRuntime(model, request_id, deadline, asyncio.get_running_loop().time())
         state = await self.graph.ainvoke({"scenario": scenario, "context": context},
-                                         context=WorkflowRuntime(model, request_id))
-        regenerated = state["review"]["rerun_slots"]
-        if any(not state["drafts"][slot]["text"] for slot in SLOTS):
-            raise ReviewError("could not produce three nonempty replies")
+                                         context=runtime)
+        if failed := state["review"]["rerun_slots"]:
+            errors = {state["drafts"][slot]["error_status"] for slot in failed}
+            if 504 in errors:
+                raise TimeoutError("reply slot recovery timed out")
+            if 429 in errors:
+                raise ModelRateLimited("reply slot recovery was rate limited")
+            raise ReviewError("could not produce three replies that pass local checks")
+        initial_status = "passed" if state["model_reviewed"] else "local_only"
         first, second, third = (
             Reply.model_validate({
                 **state["drafts"][slot],
-                "review_status": "regenerated" if slot in regenerated else "passed",
+                "review_status": "regenerated" if state["drafts"][slot]["attempt"] > 1 else initial_status,
             })
             for slot in SLOTS
         )

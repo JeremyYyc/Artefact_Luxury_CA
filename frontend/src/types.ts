@@ -99,7 +99,7 @@ export type Library = {
 };
 
 export type Slot = 1 | 2 | 3;
-export type Reply = { slot: Slot; strategy: string; text: string; review_status?: 'passed' | 'regenerated' };
+export type Reply = { slot: Slot; strategy: string; text: string; review_status?: 'passed' | 'regenerated' | 'local_only' };
 export type GenerateResponse = {
   request_id: string;
   scenario: Scenario;

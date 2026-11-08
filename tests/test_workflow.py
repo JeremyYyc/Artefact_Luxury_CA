@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from app import app
+from backend.deepseek import ModelError, ModelRateLimited
 from backend.models import GenerateInput
 from backend.resources import InvalidInput, Resources, invite_state
 from backend.workflow import ReplyWorkflow, ReviewError, WorkflowRuntime, contract_issues, generation_mode, precheck
@@ -92,9 +93,9 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_does_not_return_partial_replies_when_retry_has_no_text(self):
         model = StubModel(blank_retry=True)
-        with self.assertRaisesRegex(ReviewError, "three nonempty replies"):
+        with self.assertRaisesRegex(ReviewError, "three replies"):
             await self.workflow.generate("PO", self.context, model, "test")
-        self.assertEqual(model.retried_slots, [1])
+        self.assertEqual(model.retried_slots, [1, 1])
         self.assertEqual(len(model.review_payloads), 1)
 
     async def test_precheck_retries_even_if_reviewer_passes_a_rejected_draft(self):
@@ -103,13 +104,27 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.retried_slots, [1])
         self.assertEqual(replies[0].text, DRAFTS[1])
 
-    async def test_regenerated_reply_is_not_subject_to_a_second_content_check(self):
+    async def test_regeneration_cannot_return_an_unauthorized_price(self):
         model = StubModel(ignore_precheck=True, persist_failure=True)
-        replies = await self.workflow.generate("PO", self.context, model, "test")
-        self.assertEqual(model.retried_slots, [1])
+        with self.assertRaisesRegex(ReviewError, "three replies"):
+            await self.workflow.generate("PO", self.context, model, "test")
+        self.assertEqual(model.retried_slots, [1, 1])
         self.assertEqual(len(model.review_payloads), 1)
-        self.assertTrue(precheck(replies[0].text, self.context))
-        self.assertEqual(replies[0].review_status, "regenerated")
+
+    async def test_duplicate_retry_does_not_displace_the_locked_slot(self):
+        class DuplicateRetry(StubModel):
+            async def complete(self, messages, *, max_tokens):
+                raw = await super().complete(messages, max_tokens=max_tokens)
+                if self.retried_slots == [1]:
+                    return json.dumps({"text": DRAFTS[2]})
+                return raw
+
+        model = DuplicateRetry()
+        replies = await self.workflow.generate("PO", self.context, model, "test")
+        self.assertEqual(model.retried_slots, [1, 1])
+        self.assertEqual([(reply.slot, reply.text) for reply in replies], list(DRAFTS.items()))
+        self.assertEqual([item["slot"] for item in model.feedback["passed_replies"]], [2, 3])
+        self.assertEqual(model.feedback["issues"][0]["related_slot"], 2)
 
     def test_precheck_distinguishes_catalog_price_from_customer_budget(self):
         self.assertEqual(precheck("目录价是 1.48 万元，可先按您的 13,000 元预算考虑。", self.context), [])
@@ -367,6 +382,55 @@ class WorkbenchApiTests(unittest.TestCase):
         self.assertEqual([(item["slot"], item["text"]) for item in options], list(DRAFTS.items()))
         self.assertEqual([item["review_status"] for item in options], ["regenerated", "passed", "passed"])
         self.assertEqual(len(model.review_payloads), 1)
+
+    def test_recovers_only_the_failed_slot_when_model_review_is_unavailable(self):
+        class FaultModel:
+            def __init__(self, fault):
+                self.fault = fault
+                self.drafts = []
+
+            async def complete(self, messages, *, max_tokens):
+                body = messages[1]["content"].split("\n", 1)[1]
+                payload, offset = json.JSONDecoder().raw_decode(body)
+                if "options" in payload:
+                    await asyncio.Event().wait()
+                slot = payload["slot"]
+                retry = bool(body[offset:].strip())
+                self.drafts.append((slot, retry))
+                if slot == 1 and not retry:
+                    if self.fault is None:
+                        await asyncio.Event().wait()
+                    else:
+                        raise self.fault("initial draft failure")
+                return json.dumps({"text": DRAFTS[slot]})
+
+        for fault in (ModelRateLimited, ModelError, None):
+            with self.subTest(fault=fault), TestClient(app) as client:
+                model = FaultModel(fault)
+                app.state.model = model
+                app.state.timeout = 0.5
+                preset = next(item for item in client.get("/api/presets").json() if item["id"] == "PO-02")
+                response = client.post("/api/generate", json=preset["input"])
+                self.assertEqual(response.status_code, 200)
+                options = response.json()["options"]
+                self.assertEqual([(item["slot"], item["text"]) for item in options], list(DRAFTS.items()))
+                self.assertEqual([item["review_status"] for item in options], ["regenerated", "local_only", "local_only"])
+                self.assertCountEqual(model.drafts, [(1, False), (2, False), (3, False), (1, True)])
+
+    def test_malformed_review_does_not_discard_the_initial_drafts(self):
+        class MalformedReview:
+            async def complete(self, messages, *, max_tokens):
+                payload = json.loads(messages[1]["content"].split("\n", 1)[1])
+                if "options" in payload:
+                    return "invalid JSON"
+                return json.dumps({"text": DRAFTS[payload["slot"]]})
+
+        with TestClient(app) as client:
+            app.state.model = MalformedReview()
+            preset = next(item for item in client.get("/api/presets").json() if item["id"] == "PO-02")
+            response = client.post("/api/generate", json=preset["input"])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["review_status"] for item in response.json()["options"]], ["local_only"] * 3)
 
     def test_free_input_routes_and_returns_prepared_basis(self):
         model = ApiModel({"scenario": "PR", "reason": "本轮咨询肩背包。", "question": None})
