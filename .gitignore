@@ -4,6 +4,7 @@
 .DS_Store
 /private/
 /submission/
+/outputs/
 .venv/
 __pycache__/
 node_modules/

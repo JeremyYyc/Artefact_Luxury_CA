@@ -1,5 +1,7 @@
 # LIUXI Demo V1 项目架构与公网交付
 
+> 本文记录 V1 的历史设计与部署方案。当前版本采用单个 Vercel 项目，由 FastAPI 同源提供前端和 API。参见 [项目首页](../../README.md) 和 [V7 架构图](LIUXI_V7_End_to_End.png)。
+
 LIUXI 采用 **React + Vite 前端、FastAPI 后端、LangGraph 生成流程和只读 JSON 数据**。前后端独立运行，本地用 Docker Compose 复现。线上从同一个私有 GitHub 仓库部署两个 Vercel 项目，评审只拿到前端的生产链接。打开链接即可选择用例、改写对话并生成三条可复制的中文微信回复。
 
 [端到端工作流程图](LIUXI_End_to_End_Workflow_V1.drawio)覆盖浏览器、Vercel、FastAPI、数据和生成流程。[LangGraph V1 详细流程图](LIUXI_LangGraph_Workflow.drawio)展开六个场景节点及生成、校验和重跑的关系。

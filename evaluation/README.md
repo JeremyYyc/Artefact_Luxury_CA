@@ -2,6 +2,10 @@
 
 评测规范版本 `LIUXI-EVAL-1.0`。沿用 V1–V4「逐案评测」的口径，逐个 Case ID 评阅最终三条候选。先记录产品实际交付了几条，再判断整组是否可用。
 
+## 评测存档
+
+[50 条测试用例](LIUXI_Test_Cases.xlsx) · [V1](LIUXI_50条测试结果_V1.xlsx) · [V2](LIUXI_50条测试结果_V2.xlsx) · [V3](LIUXI_50条测试结果_V3.xlsx) · [V4](LIUXI_50条测试结果_V4.xlsx) · [V5](LIUXI_50条测试结果_V5.xlsx) · [V6](LIUXI_50条测试结果_V6.xlsx) · [V7](LIUXI_50条测试结果_V7.xlsx)
+
 ## 判定规则
 
 | 结论 | 判定条件 |
